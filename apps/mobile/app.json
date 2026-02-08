@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "WATS",
+    "slug": "wats",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "wats",
+    "userInterfaceStyle": "automatic",
+    "splash": { "image": "./assets/splash.png", "resizeMode": "contain", "backgroundColor": "#0078D4" },
+    "assetBundlePatterns": ["**/*"],
+    "ios": { "supportsTablet": true, "bundleIdentifier": "co.tz.wats.app" },
+    "android": { "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#0078D4" }, "package": "co.tz.wats.app" },
+    "plugins": ["expo-router", "expo-secure-store"]
+  }
+}

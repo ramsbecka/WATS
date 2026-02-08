@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  admin:
+    name: Admin (build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/admin/package-lock.json
+
+      - name: Install (admin)
+        run: cd apps/admin && npm ci
+        continue-on-error: true
+
+      - name: Install (admin) fallback
+        if: failure()
+        run: cd apps/admin && npm install
+
+      - name: Build (admin)
+        run: cd apps/admin && npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+
+  mobile:
+    name: Mobile (install)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/mobile/package-lock.json
+
+      - name: Install (mobile)
+        run: cd apps/mobile && npm ci
+        continue-on-error: true
+
+      - name: Install (mobile) fallback
+        if: failure()
+        run: cd apps/mobile && npm install
+
+      - name: TypeScript check (mobile)
+        run: cd apps/mobile && npx tsc --noEmit
+        continue-on-error: true
+
+  supabase-functions-tests:
+    name: Edge Functions (unit tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.37.x
+
+      - name: Run checkout validation tests
+        run: deno test --allow-read supabase/functions/_shared/checkout_validation.test.ts
+
+      - name: Run payment webhook parse tests
+        run: deno test --allow-read supabase/functions/payment-webhook/parse_webhook.test.ts

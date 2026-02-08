@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Env (never commit secrets)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Build / cache
+.next/
+out/
+dist/
+build/
+.expo/
+*.tsbuildinfo
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs / debug
+npm-debug.log*
+*.log
+.npm
+
+# Supabase
+supabase/.branches
+supabase/.temp
+
+# Expo
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Testing
+coverage/
+.nyc_output/
