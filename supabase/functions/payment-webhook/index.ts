@@ -66,6 +66,7 @@ Deno.serve(async (req) => {
   const supabase = getServiceClient();
   const stk = body.Body?.stkCallback;
   if (!stk) {
+    // M-Pesa sends other callbacks too, accept them
     return new Response(JSON.stringify({ ResultCode: 0, ResultDesc: 'Accepted' }), {
       status: 200,
       headers: { ...cors, 'Content-Type': 'application/json' },
@@ -73,15 +74,41 @@ Deno.serve(async (req) => {
   }
 
   const checkoutRequestID = stk.CheckoutRequestID;
+  const merchantRequestID = stk.MerchantRequestID;
   const resultCode = stk.ResultCode;
+  const resultDesc = stk.ResultDesc;
   const success = resultCode === 0;
 
-  // Find payment by provider_reference
-  const { data: payment, error: payErr } = await supabase
+  // Find payment by provider_reference (CheckoutRequestID) or MerchantRequestID
+  // Try CheckoutRequestID first, then MerchantRequestID
+  let payment: any = null;
+  let payErr: any = null;
+  
+  const { data: paymentByCheckout, error: err1 } = await supabase
     .from('payments')
-    .select('id, order_id, status')
+    .select('id, order_id, status, provider_reference')
     .eq('provider_reference', checkoutRequestID)
-    .single();
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  
+  if (paymentByCheckout) {
+    payment = paymentByCheckout;
+  } else {
+    const { data: paymentByMerchant, error: err2 } = await supabase
+      .from('payments')
+      .select('id, order_id, status, provider_reference')
+      .eq('provider_reference', merchantRequestID)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    
+    if (paymentByMerchant) {
+      payment = paymentByMerchant;
+    } else {
+      payErr = err2 || err1;
+    }
+  }
 
   if (payErr || !payment) {
     return new Response(JSON.stringify({ ResultCode: 0, ResultDesc: 'Accepted' }), {
@@ -97,21 +124,49 @@ Deno.serve(async (req) => {
     });
   }
 
+  // Extract payment details from callback metadata
+  let amount: number | null = null;
+  let phoneNumber: string | null = null;
+  let receiptNumber: string | null = null;
+  
+  if (success && stk.CallbackMetadata?.Item) {
+    const items = stk.CallbackMetadata.Item;
+    const amountItem = items.find((i: any) => i.Name === 'Amount');
+    const phoneItem = items.find((i: any) => i.Name === 'PhoneNumber');
+    const receiptItem = items.find((i: any) => i.Name === 'MpesaReceiptNumber');
+    
+    amount = amountItem?.Value ? Number(amountItem.Value) : null;
+    phoneNumber = phoneItem?.Value ? String(phoneItem.Value) : null;
+    receiptNumber = receiptItem?.Value ? String(receiptItem.Value) : null;
+  }
+
   const callbackPayload = {
     ResultCode: resultCode,
-    ResultDesc: stk.ResultDesc,
+    ResultDesc: resultDesc,
+    MerchantRequestID: merchantRequestID,
     CheckoutRequestID: checkoutRequestID,
     CallbackMetadata: stk.CallbackMetadata,
+    Amount: amount,
+    PhoneNumber: phoneNumber,
+    ReceiptNumber: receiptNumber,
     received_at: new Date().toISOString(),
   };
 
+  // Update payment with callback data
+  const updateData: any = {
+    status: success ? 'completed' : 'failed',
+    provider_callback: callbackPayload,
+    updated_at: new Date().toISOString(),
+  };
+  
+  // If payment succeeded, store receipt number
+  if (success && receiptNumber) {
+    updateData.provider_reference = receiptNumber; // Store M-Pesa receipt number
+  }
+  
   await supabase
     .from('payments')
-    .update({
-      status: success ? 'completed' : 'failed',
-      provider_callback: callbackPayload,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updateData)
     .eq('id', payment.id);
 
   if (success) {

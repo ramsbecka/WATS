@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { getProducts, getCategories } from '@/api/client';
 import { colors, spacing, typography, radius } from '@/theme/tokens';
+import ProductRecommendations from '@/components/ai/ProductRecommendations';
+import { trackEvent } from '@/services/ai';
 
 export default function ProductsTab() {
   const router = useRouter();
@@ -22,12 +24,15 @@ export default function ProductsTab() {
     if (showLoading) setLoading(true);
     setError(null);
     try {
-      const [prods, cats] = await Promise.all([
-        getProducts({ categoryId: categoryId ?? undefined, search: search || undefined, limit: 50 }),
-        getCategories(),
-      ]);
+      // Load categories once (they're cached)
+      if (categories.length === 0) {
+        const cats = await getCategories(true);
+        setCategories(cats);
+      }
+      
+      // Load products
+      const prods = await getProducts({ categoryId: categoryId ?? undefined, search: search || undefined, limit: 50 });
       setProducts(prods.data);
-      setCategories(cats);
     } catch (e: any) {
       setError(e?.message ?? 'Failed to load products.');
     } finally {
@@ -40,8 +45,24 @@ export default function ProductsTab() {
     load(false).finally(() => setRefreshing(false));
   };
 
+  // Load categories on mount only
+  useEffect(() => {
+    getCategories(true).then(setCategories).catch(() => {
+      // Silently handle errors
+    });
+  }, []);
+
   useEffect(() => { load(); }, [categoryId]);
-  useEffect(() => { const t = setTimeout(() => load(), 300); return () => clearTimeout(t); }, [search]);
+  
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (search.trim() || categoryId) {
+        load();
+      }
+    }, 500);
+    return () => clearTimeout(t);
+  }, [search]);
 
   return (
     <Screen edges={['top']}>
@@ -77,15 +98,35 @@ export default function ProductsTab() {
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Loading...</Text>
         </View>
+      ) : error ? (
+        <View style={styles.centered}>
+          <Ionicons name="alert-circle-outline" size={48} color={colors.error || colors.textMuted} />
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable onPress={() => load()} style={styles.retryBtn}>
+            <Text style={styles.retryText}>Retry</Text>
+          </Pressable>
+        </View>
+      ) : products.length === 0 ? (
+        <View style={styles.centered}>
+          <Ionicons name="cube-outline" size={48} color={colors.textMuted} />
+          <Text style={styles.errorText}>No products found</Text>
+          <Text style={[styles.errorText, { fontSize: 12, marginTop: 4 }]}>
+            {search ? 'Try a different search term' : 'Products will appear here once added'}
+          </Text>
+        </View>
       ) : (
-        <FlatList
-          data={products}
-          numColumns={2}
-          keyExtractor={(p) => p.id}
-          contentContainerStyle={styles.grid}
-          columnWrapperStyle={styles.gridRow}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
-          renderItem={({ item }) => {
+        <>
+          {!categoryId && !search && (
+            <ProductRecommendations categoryId={undefined} limit={10} />
+          )}
+          <FlatList
+            data={products}
+            numColumns={2}
+            keyExtractor={(p) => p.id}
+            contentContainerStyle={styles.grid}
+            columnWrapperStyle={styles.gridRow}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
+            renderItem={({ item }) => {
             const img = item.product_images?.[0]?.url;
             return (
               <Pressable
@@ -110,7 +151,8 @@ export default function ProductsTab() {
               </Pressable>
             );
           }}
-        />
+          />
+        </>
       )}
     </Screen>
   );

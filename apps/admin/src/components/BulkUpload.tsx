@@ -25,7 +25,7 @@ export default function BulkUpload() {
     setError(null);
     setResult(null);
     if (!vendorId.trim()) {
-      setError('Select a vendor.');
+      setError('Chagua duka.');
       return;
     }
     let products: any[];
@@ -75,17 +75,17 @@ export default function BulkUpload() {
   return (
     <div>
       <h1 className="text-2xl font-bold tracking-tight text-slate-900">Bulk upload products</h1>
-      <p className="mt-1 text-sm text-slate-500">Upload many products for a vendor (JSON)</p>
+      <p className="mt-1 text-sm text-slate-500">Pakia bidhaa nyingi kwa duka moja (JSON)</p>
       <div className="mt-6 max-w-2xl space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div>
-          <label htmlFor="vendor" className="block text-sm font-medium text-slate-700">Vendor</label>
+          <label htmlFor="vendor" className="block text-sm font-medium text-slate-700">Duka</label>
           <select
             id="vendor"
             value={vendorId}
             onChange={(e) => setVendorId(e.target.value)}
             className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900"
           >
-            <option value="">Select vendor</option>
+            <option value="">Chagua duka</option>
             {vendors.map((v) => (
               <option key={v.id} value={v.id}>{v.business_name}</option>
             ))}

@@ -1,27 +1,32 @@
 import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
-import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'Missing Supabase env: set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in .env or app config.'
-  );
-}
+export const hasValidSupabase = Boolean(supabaseUrl && supabaseAnonKey && !supabaseUrl.startsWith('https://placeholder'));
 
-const SecureStoreAdapter = {
-  getItem: (key: string) => SecureStore.getItemAsync(key),
-  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
-  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
+// Use placeholder so app loads even when .env is missing (avoids white screen)
+const effectiveUrl = supabaseUrl || 'https://placeholder.supabase.co';
+const effectiveKey = supabaseAnonKey || 'placeholder-anon-key';
+
+// Auth storage: AsyncStorage on all platforms (avoids SecureStore 2KB limit that breaks session + upload)
+// On web we could use localStorage; AsyncStorage works on web too when using react-native-web
+const storage = {
+  getItem: (key: string) => AsyncStorage.getItem(key),
+  setItem: (key: string, value: string) => AsyncStorage.setItem(key, value),
+  removeItem: (key: string) => AsyncStorage.removeItem(key),
 };
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(effectiveUrl, effectiveKey, {
   auth: {
-    storage: SecureStoreAdapter,
+    storage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    // Refresh token before it expires (refresh every 30 minutes)
+    flowType: 'pkce',
   },
 });

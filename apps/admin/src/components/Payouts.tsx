@@ -13,7 +13,7 @@ export default function Payouts() {
   useEffect(() => {
     (async () => {
       const [vRes, ordersRes] = await Promise.all([
-        supabase.from('vendors').select('id, business_name, contact_phone, commission_rate').eq('is_approved', true),
+        supabase.from('vendors').select('id, business_name, contact_phone, commission_rate'),
         supabase.from('orders').select('id').in('status', PAID_STATUSES),
       ]);
       const list = vRes.data ?? [];
@@ -35,7 +35,7 @@ export default function Payouts() {
   return (
     <div>
       <h1 className="text-2xl font-bold tracking-tight text-slate-900">Payouts & reports</h1>
-      <p className="mt-1 text-sm text-slate-500">Vendor sales and commission</p>
+      <p className="mt-1 text-sm text-slate-500">Mauzo kwa duka na komisheni</p>
       <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center gap-2 p-12 text-slate-500">
@@ -46,7 +46,7 @@ export default function Payouts() {
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Vendor</th>
+                <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Duka</th>
                 <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Contact</th>
                 <th className="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Sales (TZS)</th>
                 <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Commission</th>
@@ -73,7 +73,7 @@ export default function Payouts() {
           </table>
         )}
         {!loading && vendors.length === 0 && (
-          <div className="p-12 text-center text-slate-500">No approved vendors.</div>
+          <div className="p-12 text-center text-slate-500">Hakuna maduka bado.</div>
         )}
       </div>
     </div>

@@ -17,18 +17,20 @@ const LOW_STOCK_THRESHOLD = 5;
 const cards = [
   { key: 'ordersToday', label: 'Orders today', to: '/orders', Icon: Package, color: 'bg-primary/10 text-primary' },
   { key: 'ordersTotal', label: 'Total orders', to: '/orders', Icon: ShoppingCart, color: 'bg-slate-100 text-slate-700' },
+  { key: 'users', label: 'Watumiaji', to: '/users', Icon: Users, color: 'bg-indigo-50 text-indigo-700' },
   { key: 'pendingReturns', label: 'Pending returns', to: '/returns', Icon: RotateCcw, color: 'bg-orange-50 text-orange-700' },
   { key: 'lowStock', label: 'Low stock (≤' + LOW_STOCK_THRESHOLD + ')', to: '/inventory', Icon: AlertTriangle, color: 'bg-amber-50 text-amber-700' },
   { key: 'revenueToday', label: 'Revenue today (TZS)', to: '/payments', Icon: Wallet, color: 'bg-emerald-50 text-emerald-700' },
   { key: 'revenueTotal', label: 'Total revenue (TZS)', to: '/payments', Icon: TrendingUp, color: 'bg-blue-50 text-blue-700' },
   { key: 'products', label: 'Products', to: '/products', Icon: ClipboardList, color: 'bg-violet-50 text-violet-700' },
-  { key: 'vendors', label: 'Vendors', to: '/vendors', Icon: Users, color: 'bg-amber-50 text-amber-700' },
+  { key: 'vendors', label: 'Maduka', to: '/vendors', Icon: Users, color: 'bg-amber-50 text-amber-700' },
 ];
 
 export default function Dashboard() {
   const [stats, setStats] = useState<Record<string, number | string>>({
     ordersToday: 0,
     ordersTotal: 0,
+    users: 0,
     pendingReturns: 0,
     lowStock: 0,
     revenueToday: 0,
@@ -46,12 +48,14 @@ export default function Dashboard() {
       supabase.from('orders').select('total_tzs').in('status', ['confirmed', 'processing', 'shipped', 'delivered']),
       supabase.from('products').select('id', { count: 'exact', head: true }),
       supabase.from('vendors').select('id', { count: 'exact', head: true }),
-    ]).then(([oToday, oAll, rToday, rAll, prods, vends]) => {
+      supabase.from('profile').select('id', { count: 'exact', head: true }),
+    ]).then(([oToday, oAll, rToday, rAll, prods, vends, users]) => {
       const revToday = (rToday.data ?? []).reduce((s, r) => s + Number(r.total_tzs), 0);
       const revAll = (rAll.data ?? []).reduce((s, r) => s + Number(r.total_tzs), 0);
       setStats({
         ordersToday: oToday.count ?? 0,
         ordersTotal: oAll.count ?? 0,
+        users: users.count ?? 0,
         pendingReturns: 0,
         lowStock: 0,
         revenueToday: revToday.toLocaleString(),

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Package, Plus } from 'lucide-react';
+import { ArrowLeft, Package, Plus, MapPin, Calendar } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 const ORDER_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'] as const;
@@ -16,6 +16,11 @@ export default function OrderDetail() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [creatingShipment, setCreatingShipment] = useState(false);
+  const [selectedShipment, setSelectedShipment] = useState<string | null>(null);
+  const [trackingLocation, setTrackingLocation] = useState('');
+  const [trackingDescription, setTrackingDescription] = useState('');
+  const [trackingNotes, setTrackingNotes] = useState('');
+  const [estimatedDelivery, setEstimatedDelivery] = useState('');
 
   useEffect(() => {
     if (!id) return;
@@ -28,7 +33,10 @@ export default function OrderDetail() {
           products(id, name_sw, name_en)
         )
       `).eq('id', id).single(),
-      supabase.from('shipments').select('id, status, tracking_number, carrier, created_at').eq('order_id', id).order('created_at', { ascending: false }),
+      supabase.from('shipments').select(`
+        id, status, tracking_number, carrier, estimated_delivery_date, fulfilled_at, delivered_at, created_at,
+        shipment_tracking_events(id, status, location, description, notes, created_at)
+      `).eq('order_id', id).order('created_at', { ascending: false }),
     ]).then(([orderRes, shipRes]) => {
       if (!orderRes.error) setOrder(orderRes.data);
       if (!shipRes.error) setShipments(shipRes.data ?? []);
@@ -42,6 +50,47 @@ export default function OrderDetail() {
     const { error } = await supabase.from('orders').update({ status }).eq('id', id);
     setUpdating(false);
     if (!error) setOrder((o: any) => (o ? { ...o, status } : o));
+  };
+
+  const addTrackingEvent = async (shipmentId: string) => {
+    if (!trackingDescription.trim()) {
+      alert('Description is required');
+      return;
+    }
+    const { error } = await supabase.from('shipment_tracking_events').insert({
+      shipment_id: shipmentId,
+      status: shipments.find((s) => s.id === shipmentId)?.status || 'pending',
+      location: trackingLocation || null,
+      description: trackingDescription,
+      notes: trackingNotes || null,
+    });
+    if (!error) {
+      setTrackingLocation('');
+      setTrackingDescription('');
+      setTrackingNotes('');
+      setSelectedShipment(null);
+      // Reload shipments
+      supabase.from('shipments').select(`
+        id, status, tracking_number, carrier, estimated_delivery_date, fulfilled_at, delivered_at, created_at,
+        shipment_tracking_events(id, status, location, description, notes, created_at)
+      `).eq('order_id', id).order('created_at', { ascending: false }).then(({ data }) => {
+        setShipments(data ?? []);
+      });
+    }
+  };
+
+  const updateEstimatedDelivery = async (shipmentId: string) => {
+    const date = estimatedDelivery ? new Date(estimatedDelivery).toISOString() : null;
+    const { error } = await supabase.from('shipments').update({ estimated_delivery_date: date }).eq('id', shipmentId);
+    if (!error) {
+      setEstimatedDelivery('');
+      supabase.from('shipments').select(`
+        id, status, tracking_number, carrier, estimated_delivery_date, fulfilled_at, delivered_at, created_at,
+        shipment_tracking_events(id, status, location, description, notes, created_at)
+      `).eq('order_id', id).order('created_at', { ascending: false }).then(({ data }) => {
+        setShipments(data ?? []);
+      });
+    }
   };
 
   const createShipment = async () => {
@@ -174,27 +223,137 @@ export default function OrderDetail() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {shipments.map((s) => (
-                <tr key={s.id}>
-                  <td className="px-5 py-3">
-                    <select
-                      aria-label="Shipment status"
-                      value={s.status}
-                      onChange={(e) => updateShipmentStatus(s.id, e.target.value)}
-                      className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm font-medium text-slate-700"
-                    >
-                      {SHIPMENT_STATUSES.map((st) => (
-                        <option key={st} value={st}>{st.replace('_', ' ')}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-5 py-3 text-sm text-slate-600">{s.tracking_number ?? '–'} {s.carrier && `(${s.carrier})`}</td>
-                  <td className="px-5 py-3 text-sm text-slate-500">{new Date(s.created_at).toLocaleString()}</td>
-                  <td className="px-5 py-3 text-right">
-                    <Link href="/shipments" className="text-sm font-medium text-primary hover:text-primary-dark">View all</Link>
-                  </td>
-                </tr>
-              ))}
+              {shipments.map((s) => {
+                const events = (s.shipment_tracking_events || []).sort((a: any, b: any) => 
+                  new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                );
+                return (
+                  <tr key={s.id} className="hover:bg-slate-50">
+                    <td className="px-5 py-3" colSpan={4}>
+                      <div className="space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-4">
+                          <div className="flex items-center gap-4">
+                            <select
+                              aria-label="Shipment status"
+                              value={s.status}
+                              onChange={(e) => updateShipmentStatus(s.id, e.target.value)}
+                              className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm font-medium text-slate-700"
+                            >
+                              {SHIPMENT_STATUSES.map((st) => (
+                                <option key={st} value={st}>{st.replace('_', ' ')}</option>
+                              ))}
+                            </select>
+                            <div className="text-sm text-slate-600">
+                              <span className="font-medium">Tracking:</span> {s.tracking_number ?? '–'} {s.carrier && `(${s.carrier})`}
+                            </div>
+                            {s.estimated_delivery_date && (
+                              <div className="flex items-center gap-1 text-sm text-slate-600">
+                                <Calendar className="h-4 w-4" />
+                                <span>Est. Delivery: {new Date(s.estimated_delivery_date).toLocaleDateString()}</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="date"
+                              value={estimatedDelivery}
+                              onChange={(e) => setEstimatedDelivery(e.target.value)}
+                              placeholder="Est. delivery"
+                              className="rounded border border-slate-300 px-2 py-1 text-sm"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => updateEstimatedDelivery(s.id)}
+                              className="rounded bg-primary px-3 py-1 text-sm text-white hover:bg-primary-dark"
+                            >
+                              Set Est. Delivery
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedShipment(selectedShipment === s.id ? null : s.id)}
+                              className="rounded border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-50"
+                            >
+                              {selectedShipment === s.id ? 'Hide' : 'Add'} Tracking Event
+                            </button>
+                          </div>
+                        </div>
+                        {selectedShipment === s.id && (
+                          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                            <h3 className="mb-3 text-sm font-semibold text-slate-700">Add Tracking Event</h3>
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600">Location (optional)</label>
+                                <input
+                                  type="text"
+                                  value={trackingLocation}
+                                  onChange={(e) => setTrackingLocation(e.target.value)}
+                                  placeholder="e.g., Dar es Salaam Warehouse"
+                                  className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600">Description *</label>
+                                <input
+                                  type="text"
+                                  value={trackingDescription}
+                                  onChange={(e) => setTrackingDescription(e.target.value)}
+                                  placeholder="e.g., Package picked up from warehouse"
+                                  className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600">Notes (optional)</label>
+                                <textarea
+                                  value={trackingNotes}
+                                  onChange={(e) => setTrackingNotes(e.target.value)}
+                                  placeholder="Additional notes..."
+                                  rows={2}
+                                  className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm"
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => addTrackingEvent(s.id)}
+                                className="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                              >
+                                Add Event
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        {events.length > 0 && (
+                          <div className="border-t border-slate-200 pt-3">
+                            <h4 className="mb-2 text-xs font-semibold uppercase text-slate-500">Tracking History</h4>
+                            <div className="space-y-2">
+                              {events.map((event: any) => (
+                                <div key={event.id} className="flex items-start gap-3 rounded border border-slate-200 bg-white p-2 text-sm">
+                                  <div className="mt-0.5 h-2 w-2 rounded-full bg-primary" />
+                                  <div className="flex-1">
+                                    <div className="font-medium text-slate-900">{event.description}</div>
+                                    {event.location && (
+                                      <div className="mt-1 flex items-center gap-1 text-xs text-slate-600">
+                                        <MapPin className="h-3 w-3" />
+                                        {event.location}
+                                      </div>
+                                    )}
+                                    {event.notes && (
+                                      <div className="mt-1 text-xs text-slate-500">{event.notes}</div>
+                                    )}
+                                    <div className="mt-1 text-xs text-slate-400">
+                                      {new Date(event.created_at).toLocaleString()}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

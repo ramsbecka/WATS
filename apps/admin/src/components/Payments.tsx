@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
-const STATUS_OPTIONS = ['pending', 'completed', 'failed', 'refunded'];
+const STATUS_OPTIONS = ['pending', 'initiated', 'completed', 'failed', 'refunded', 'cancelled'];
 
 export default function Payments() {
   const [payments, setPayments] = useState<any[]>([]);
@@ -15,7 +15,7 @@ export default function Payments() {
     let q = supabase
       .from('payments')
       .select(`
-        id, order_id, provider, status, amount_tzs, created_at,
+        id, order_id, provider, status, amount_tzs, provider_reference, provider_callback, created_at,
         orders(order_number)
       `)
       .order('created_at', { ascending: false })
@@ -59,6 +59,7 @@ export default function Payments() {
                 <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Order</th>
                 <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Provider</th>
                 <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
+                <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Reference</th>
                 <th className="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Amount (TZS)</th>
                 <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Date</th>
               </tr>
@@ -80,6 +81,13 @@ export default function Payments() {
                     }`}>
                       {p.status}
                     </span>
+                  </td>
+                  <td className="px-5 py-3.5 text-sm text-slate-600">
+                    {p.provider_reference ? (
+                      <span className="font-mono text-xs">{p.provider_reference}</span>
+                    ) : (
+                      <span className="text-slate-400">–</span>
+                    )}
                   </td>
                   <td className="px-5 py-3.5 text-right text-sm font-medium text-slate-900">{Number(p.amount_tzs).toLocaleString()}</td>
                   <td className="px-5 py-3.5 text-sm text-slate-500">{new Date(p.created_at).toLocaleString()}</td>

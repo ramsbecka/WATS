@@ -26,18 +26,16 @@ export default function Orders() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadOrders = () => {
-    if (!user) return Promise.resolve();
+  const loadOrders = async () => {
+    if (!user) return;
     setError(null);
-    return supabase
+    const { data, error: err } = await supabase
       .from('orders')
       .select('id, order_number, status, total_tzs, created_at')
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .then(({ data, error: err }) => {
-        if (err) setError(err.message ?? 'Failed to load orders.');
-        else setOrders(data ?? []);
-      });
+      .order('created_at', { ascending: false });
+    if (err) setError(err.message ?? 'Failed to load orders.');
+    else setOrders(data ?? []);
   };
 
   useEffect(() => {
@@ -71,7 +69,7 @@ export default function Orders() {
         <View style={styles.centered}>
           <Ionicons name="cloud-offline-outline" size={48} color={colors.textMuted} />
           <Text style={styles.emptyText}>{error}</Text>
-          <Pressable onPress={() => { setLoading(true); loadOrders().finally(() => setLoading(false)); }} style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.8 }]}>
+          <Pressable onPress={() => { setLoading(true); void loadOrders().then(() => setLoading(false)); }} style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.8 }]}>
             <Text style={styles.retryText}>Retry</Text>
           </Pressable>
         </View>

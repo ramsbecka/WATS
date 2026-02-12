@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Plus, Pencil } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -53,7 +54,7 @@ export default function Categories() {
               {categories.map((c) => (
                 <tr key={c.id}>
                   <td className="px-5 py-3.5 text-sm font-medium text-slate-900">
-                    {c.image_url ? <img src={c.image_url} alt="" className="mr-2 inline-block h-8 w-8 rounded object-cover" /> : null}
+                    {c.image_url ? <Image src={c.image_url} alt="" width={32} height={32} className="mr-2 inline-block rounded object-cover" unoptimized /> : null}
                     {c.name_sw} {c.name_en && ` / ${c.name_en}`}
                   </td>
                   <td className="px-5 py-3.5 text-sm text-slate-500">{c.parent_id ? (categories.find((p) => p.id === c.parent_id)?.name_sw ?? '–') : '–'}</td>

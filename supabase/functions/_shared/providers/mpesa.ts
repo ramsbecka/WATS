@@ -26,8 +26,9 @@ export type StkPushResponse = {
   errorMessage?: string;
 };
 
-const SANDBOX_URL = 'https://sandbox.safaricom.co.tz';
-const PROD_URL = 'https://api.safaricom.co.ke'; // TZ may differ - use correct base
+// M-Pesa API URLs
+const SANDBOX_URL = 'https://sandbox.safaricom.co.ke';
+const PROD_URL = 'https://api.safaricom.co.ke';
 
 export async function getMpesaAccessToken(config: MpesaConfig): Promise<string> {
   const base = config.env === 'sandbox' ? SANDBOX_URL : PROD_URL;

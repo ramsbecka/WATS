@@ -1,7 +1,7 @@
 /**
- * Vendor products bulk upload – Edge Function
+ * Bulk upload products for a shop (duka) – Edge Function
  * POST body: { vendor_id: uuid, products: [...] }
- * Role: vendor (own vendor_id only) or admin.
+ * Admin only: admin anajaza bidhaa mwenyewe.
  */
 
 import { getServiceClient, getAuthClient } from '../_shared/db.ts';
@@ -67,23 +67,12 @@ Deno.serve(async (req) => {
     }
 
     const supabase = getServiceClient();
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    const role = (profile as { role?: string } | null)?.role ?? 'customer';
+    const { data: adminRow } = await supabase.from('admin_profile').select('id').eq('id', user.id).maybeSingle();
+    const isAdmin = !!adminRow?.id;
 
-    if (role === 'admin') {
-      // allow any vendor_id
-    } else if (role === 'vendor') {
-      const { data: vendor } = await supabase.from('vendors').select('id').eq('profile_id', user.id).single();
-      const myVendorId = (vendor as { id: string } | null)?.id;
-      if (!myVendorId || myVendorId !== vendorId) {
-        return new Response(
-          JSON.stringify({ error: 'Forbidden: own vendor only', code: 'FORBIDDEN' }),
-          { status: 403, headers: { ...cors, 'Content-Type': 'application/json' } }
-        );
-      }
-    } else {
+    if (!isAdmin) {
       return new Response(
-        JSON.stringify({ error: 'Forbidden: vendor or admin only', code: 'FORBIDDEN' }),
+        JSON.stringify({ error: 'Forbidden: admin only', code: 'FORBIDDEN' }),
         { status: 403, headers: { ...cors, 'Content-Type': 'application/json' } }
       );
     }

@@ -1,21 +1,24 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function Products() {
+  const router = useRouter();
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryId, setCategoryId] = useState<string>('');
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.from('categories').select('id, name_sw, name_en').eq('is_active', true).order('sort_order').then(({ data }) => setCategories(data ?? []));
   }, []);
 
-  useEffect(() => {
+  const loadProducts = () => {
     setLoading(true);
     let q = supabase
       .from('products')
@@ -27,7 +30,30 @@ export default function Products() {
       if (!error) setProducts(data ?? []);
       setLoading(false);
     });
+  };
+
+  useEffect(() => {
+    loadProducts();
   }, [categoryId, search]);
+
+  const handleDelete = async (productId: string, productName: string) => {
+    if (!confirm(`Je, una uhakika unataka kufuta bidhaa "${productName}"?\n\nHii itaondoa bidhaa kabisa na hauwezi kuirejesha.`)) {
+      return;
+    }
+    
+    setDeleting(productId);
+    try {
+      // Delete product (cascade will delete variants, images, etc.)
+      const { error } = await supabase.from('products').delete().eq('id', productId);
+      if (error) throw error;
+      alert('Bidhaa imefutwa.');
+      loadProducts();
+    } catch (e: any) {
+      alert(`Failed to delete product: ${e.message}`);
+    } finally {
+      setDeleting(null);
+    }
+  };
 
   return (
     <div>
@@ -93,9 +119,28 @@ export default function Products() {
                     </span>
                   </td>
                   <td className="px-5 py-3.5 text-right">
-                    <Link href={`/products/${p.id}`} className="text-sm font-medium text-primary hover:text-primary-dark">
-                      Edit →
-                    </Link>
+                    <div className="flex items-center justify-end gap-3">
+                      <Link href={`/products/${p.id}`} className="text-sm font-medium text-primary hover:text-primary-dark">
+                        Edit →
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(p.id, p.name_sw || p.name_en || 'Product')}
+                        disabled={deleting === p.id}
+                        className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1"
+                        aria-label="Delete product"
+                      >
+                        {deleting === p.id ? (
+                          <>
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
+                            Deleting...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="h-4 w-4" /> Delete
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

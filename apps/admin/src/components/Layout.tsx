@@ -17,6 +17,8 @@ import {
   CreditCard,
   Wallet,
   LogOut,
+  Ticket,
+  UserPlus,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
@@ -30,13 +32,16 @@ const nav = [
   { href: '/orders', label: 'Orders', Icon: ShoppingCart },
   { href: '/shipments', label: 'Shipments', Icon: Truck },
   { href: '/returns', label: 'Returns', Icon: RotateCcw },
-  { href: '/vendors', label: 'Vendors', Icon: Users },
+  { href: '/vendors', label: 'Maduka', Icon: Users },
   { href: '/payments', label: 'Payments', Icon: CreditCard },
   { href: '/payouts', label: 'Payouts', Icon: Wallet },
+  { href: '/voucher-settings', label: 'Voucher Settings', Icon: Ticket },
+  { href: '/vouchers', label: 'Vouchers', Icon: Ticket },
+  { href: '/referral-codes', label: 'Referral Codes', Icon: UserPlus },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? '';
   const router = useRouter();
   const { signOut } = useAuth();
 

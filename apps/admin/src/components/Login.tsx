@@ -1,28 +1,46 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, hasValidSupabase } from '@/lib/supabase';
 
 export default function Login() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [reasonMessage, setReasonMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const reason = searchParams?.get('reason') ?? null;
+    if (reason === 'not_admin') {
+      setReasonMessage('not_admin');
+      router.replace('/login', { scroll: false });
+    }
+  }, [searchParams, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
       if (err) throw err;
+      // Subiri session kusasishwa kwenye AuthProvider kabla ya redirect (epuka kurudishwa /login)
+      if (data?.session) {
+        await new Promise((r) => setTimeout(r, 350));
+      }
       router.replace('/');
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Sign-in failed. Check email and password.');
+      const msg =
+        e && typeof e === 'object' && 'message' in e
+          ? String((e as { message: unknown }).message)
+          : 'Sign-in failed. Check email and password.';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -38,6 +56,26 @@ export default function Login() {
             <p className="text-sm text-slate-500">Admin dashboard</p>
           </div>
         </div>
+        {!hasValidSupabase && (
+          <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local to connect.
+          </p>
+        )}
+        {reasonMessage === 'not_admin' && (
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <p className="font-medium">Akaunti haijawekwa kama admin.</p>
+                <p>Weka email yako kwenye uga wa Email hapa chini, nakili SQL iliyo chini, uendeshe kwenye <strong>Supabase → SQL Editor</strong>, kisha ingia tena.</p>
+                <pre className="overflow-x-auto rounded bg-amber-100/80 p-2.5 text-xs font-mono select-all whitespace-pre-wrap break-all" title="Nakili na uendeshe kwenye SQL Editor">
+                  {`SELECT public.grant_admin_by_email('${email || 'email-yako@example.com'}');`}
+                </pre>
+                <p className="text-xs text-amber-800">Email inajazwa kiotomatiki unapoandika kwenye uga wa Email hapa chini.</p>
+              </div>
+            </div>
+          </div>
+        )}
         <form onSubmit={handleLogin} className="flex flex-col gap-4" noValidate>
           <div>
             <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-slate-700">
@@ -94,10 +132,10 @@ export default function Login() {
           )}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !hasValidSupabase}
             className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-dark disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-2"
           >
-            {loading ? 'Signing in…' : 'Sign in'}
+            {loading ? 'Signing in…' : !hasValidSupabase ? 'Unganisha Supabase kwanza' : 'Sign in'}
           </button>
         </form>
       </div>

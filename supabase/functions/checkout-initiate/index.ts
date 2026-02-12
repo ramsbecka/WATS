@@ -85,8 +85,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get profile (phone for payment)
-    const { data: profile } = await supabase.from('profiles').select('phone').eq('id', user.id).single();
+    // Get profile (phone for payment) – table is profile (watumiaji), not profiles
+    const { data: profile } = await supabase.from('profile').select('phone').eq('id', user.id).single();
     const phone = profile?.phone || shipping_address!.phone;
     const phoneNormalized = normalizePhone(phone || '');
     if (!phoneNormalized) {
@@ -201,15 +201,16 @@ Deno.serve(async (req) => {
       const shortcode = Deno.env.get('MPESA_SHORTCODE');
       const passkey = Deno.env.get('MPESA_PASSKEY');
       if (consumerKey && consumerSecret && shortcode && passkey) {
+        const env = (Deno.env.get('MPESA_ENV') as 'sandbox' | 'production') || 'sandbox';
         const token = await getMpesaAccessToken({
           consumerKey,
           consumerSecret,
           shortcode,
           passkey,
-          env: (Deno.env.get('MPESA_ENV') as 'sandbox' | 'production') || 'sandbox',
+          env,
         });
         const stk = await mpesaStkPush(
-          { consumerKey, consumerSecret, shortcode, passkey, env: 'sandbox' },
+          { consumerKey, consumerSecret, shortcode, passkey, env },
           token,
           {
             phone: phoneNormalized.startsWith('255') ? phoneNormalized : `255${phoneNormalized}`,

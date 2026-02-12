@@ -1,4 +1,4 @@
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { colors, radius, shadows } from '@/theme/tokens';
 
 export function Card({
@@ -7,7 +7,7 @@ export function Card({
   elevated = true,
 }: {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   elevated?: boolean;
 }) {
   return (

@@ -6,7 +6,8 @@
     "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
-    "lint": "next lint"
+    "lint": "next lint",
+    "clean": "node -e \"const fs=require('fs'); const p='.next'; if(fs.existsSync(p)){ try { fs.rmSync(p,{recursive:true,maxRetries:3}); console.log('Cleaned .next'); } catch(e) { console.error('Stop the dev server first, then run: npm run clean'); process.exit(1); } } else { console.log('No .next folder'); }\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
@@ -20,6 +21,8 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "autoprefixer": "^10.4.16",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.0",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
     "typescript": "~5.3.0"

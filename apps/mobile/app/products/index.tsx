@@ -7,3 +7,4 @@ export default function ProductsIndex() {
     router.replace('/(tabs)/products');
   }, []);
   return null;
+}

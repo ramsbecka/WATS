@@ -25,5 +25,11 @@ export function validateShippingAddress(addr: ShippingAddress | null | undefined
 }
 
 export function normalizePhone(phone: string): string {
-  return phone.replace(/\D/g, '');
+  // Remove all non-digit characters
+  let cleaned = phone.replace(/\D/g, '');
+  // Remove leading 0 if present (Tanzania phone numbers start with 0)
+  if (cleaned.startsWith('0')) {
+    cleaned = cleaned.substring(1);
+  }
+  return cleaned;
 }

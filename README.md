@@ -83,8 +83,8 @@ Never commit service role key or M-Pesa secrets. Use `.env.example` (without val
 
 **Requirements:**
 
-- **Node.js:** 18.x or 20.x LTS (e.g. v20.19). Avoid Node 21+ if you hit native module issues.
-- **Expo SDK:** 50 (see `apps/mobile/package.json`). Use `npx expo start` (CLI from project).
+- **Node.js:** 20.19.x LTS (inayotumika na Expo SDK 54). Kompyuta yako: `node -v` inapaswa kuonyesha v20.19.x. Orodha: `.nvmrc` ina `20.19`.
+- **Expo SDK:** 54 (Expo Go 54.x). Use `npx expo start` (CLI from project).
 - **Android:** Java 17 (e.g. OpenJDK 17), Android SDK (Android Studio or standalone). Set `ANDROID_HOME` if needed.
 - **iOS (mac only):** Xcode, CocoaPods. Simulator or device.
 

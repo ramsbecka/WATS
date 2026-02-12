@@ -9,10 +9,11 @@ import { useCartStore } from '@/store/cart';
 import { useAuthStore } from '@/store/auth';
 import { initiateCheckout } from '@/api/client';
 import { colors, spacing, typography } from '@/theme/tokens';
+import { trackPurchase } from '@/services/ai';
 
 export default function Checkout() {
   const router = useRouter();
-  const { total, setItems } = useCartStore();
+  const { total, setItems, items } = useCartStore();
   const { user, profile, loading: authLoading } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [address, setAddress] = useState({
@@ -25,7 +26,7 @@ export default function Checkout() {
   });
 
   useEffect(() => {
-    if (!authLoading && !user) router.replace('/login');
+    if (!authLoading && !user) router.replace('/auth/login');
   }, [authLoading, user]);
 
   if (authLoading || !user) {
@@ -45,6 +46,20 @@ export default function Checkout() {
         payment_provider: 'mpesa',
       });
       setLoading(false);
+      
+      // Track purchase analytics
+      trackPurchase(
+        result.order_id,
+        total,
+        'TZS',
+        items.map((item) => ({
+          item_id: item.productId,
+          item_name: item.name || 'Product',
+          quantity: item.quantity,
+          price: item.price,
+        }))
+      );
+      
       setItems([]); // Clear cart after order created
       router.replace({ pathname: '/checkout/payment', params: { orderId: result.order_id, orderNumber: result.order_number } });
     } catch (e: any) {

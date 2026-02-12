@@ -28,8 +28,12 @@ export default function Cart() {
             rows.map((r: any) => ({
               id: r.id,
               product_id: r.product_id,
+              variant_id: r.variant_id,
               quantity: r.quantity,
-              product: r.products,
+              product: {
+                ...r.products,
+                price_tzs: r.product_variants?.price_tzs ?? r.products?.price_tzs ?? 0,
+              },
             })
           ));
         })
@@ -42,12 +46,12 @@ export default function Cart() {
     loadCart();
   }, [user]);
 
-  const handleRemove = async (productId: string) => {
+  const handleRemove = async (item: any) => {
     if (!user) return;
-    removeItem(productId);
+    removeItem(item.product_id, item.variant_id);
     try {
       const cartId = await getOrCreateCart(user.id);
-      await removeCartItem(cartId, productId);
+      await removeCartItem(cartId, item.product_id, item.variant_id);
     } catch (_) {}
   };
 
@@ -107,7 +111,7 @@ export default function Cart() {
               <Text style={styles.itemPrice}>TZS {((item.product?.price_tzs ?? 0) * item.quantity).toLocaleString()}</Text>
             </View>
             <Pressable
-              onPress={() => handleRemove(item.product_id)}
+              onPress={() => handleRemove(item)}
               style={({ pressed }) => [styles.removeBtn, pressed && { opacity: 0.7 }]}
             >
               <Ionicons name="trash-outline" size={20} color={colors.error} />
