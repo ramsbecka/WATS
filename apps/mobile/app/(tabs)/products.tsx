@@ -64,35 +64,43 @@ export default function ProductsTab() {
     return () => clearTimeout(t);
   }, [search]);
 
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <Text style={styles.title}>Products</Text>
+      <Text style={styles.subtitle}>Choose what you need</Text>
+      <Input
+        placeholder="Search products..."
+        value={search}
+        onChangeText={setSearch}
+        style={styles.search}
+      />
+      <FlatList
+        horizontal
+        data={[{ id: null, name_sw: 'All' }, ...categories]}
+        keyExtractor={(c) => c.id ?? 'all'}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chips}
+        scrollEnabled={true}
+        nestedScrollEnabled={true}
+        renderItem={({ item }) => (
+          <Pressable
+            style={[styles.chip, categoryId === item.id && styles.chipActive]}
+            onPress={() => setCategoryId(item.id)}
+          >
+            <Text style={[styles.chipText, categoryId === item.id && styles.chipTextActive]}>
+              {item.name_sw ?? item.name_en ?? 'All'}
+            </Text>
+          </Pressable>
+        )}
+      />
+      {!categoryId && !search && (
+        <ProductRecommendations categoryId={undefined} limit={10} />
+      )}
+    </View>
+  );
+
   return (
     <Screen edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Products</Text>
-        <Text style={styles.subtitle}>Choose what you need</Text>
-        <Input
-          placeholder="Search products..."
-          value={search}
-          onChangeText={setSearch}
-          style={styles.search}
-        />
-        <FlatList
-          horizontal
-          data={[{ id: null, name_sw: 'All' }, ...categories]}
-          keyExtractor={(c) => c.id ?? 'all'}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chips}
-          renderItem={({ item }) => (
-            <Pressable
-              style={[styles.chip, categoryId === item.id && styles.chipActive]}
-              onPress={() => setCategoryId(item.id)}
-            >
-              <Text style={[styles.chipText, categoryId === item.id && styles.chipTextActive]}>
-                {item.name_sw ?? item.name_en ?? 'All'}
-              </Text>
-            </Pressable>
-          )}
-        />
-      </View>
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -107,26 +115,26 @@ export default function ProductsTab() {
           </Pressable>
         </View>
       ) : products.length === 0 ? (
-        <View style={styles.centered}>
-          <Ionicons name="cube-outline" size={48} color={colors.textMuted} />
-          <Text style={styles.errorText}>No products found</Text>
-          <Text style={[styles.errorText, { fontSize: 12, marginTop: 4 }]}>
-            {search ? 'Try a different search term' : 'Products will appear here once added'}
-          </Text>
-        </View>
-      ) : (
         <>
-          {!categoryId && !search && (
-            <ProductRecommendations categoryId={undefined} limit={10} />
-          )}
-          <FlatList
-            data={products}
-            numColumns={2}
-            keyExtractor={(p) => p.id}
-            contentContainerStyle={styles.grid}
-            columnWrapperStyle={styles.gridRow}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
-            renderItem={({ item }) => {
+          {renderHeader()}
+          <View style={styles.centered}>
+            <Ionicons name="cube-outline" size={48} color={colors.textMuted} />
+            <Text style={styles.errorText}>No products found</Text>
+            <Text style={[styles.errorText, { fontSize: 12, marginTop: 4 }]}>
+              {search ? 'Try a different search term' : 'Products will appear here once added'}
+            </Text>
+          </View>
+        </>
+      ) : (
+        <FlatList
+          data={products}
+          numColumns={2}
+          keyExtractor={(p) => p.id}
+          contentContainerStyle={styles.grid}
+          columnWrapperStyle={styles.gridRow}
+          ListHeaderComponent={renderHeader}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
+          renderItem={({ item }) => {
             const img = item.product_images?.[0]?.url;
             return (
               <Pressable
@@ -151,8 +159,7 @@ export default function ProductsTab() {
               </Pressable>
             );
           }}
-          />
-        </>
+        />
       )}
     </Screen>
   );
@@ -175,6 +182,7 @@ const styles = StyleSheet.create({
   chipText: { ...typography.caption, color: colors.textSecondary },
   chipTextActive: { color: colors.onPrimary, fontWeight: '600' },
   grid: { padding: spacing.lg, paddingTop: 0, paddingBottom: 100 },
+  header: { padding: spacing.lg, paddingBottom: spacing.md },
   gridRow: { gap: 12, marginBottom: 12 },
   cardWrap: { flex: 1, maxWidth: '48%' },
   card: { overflow: 'hidden' },

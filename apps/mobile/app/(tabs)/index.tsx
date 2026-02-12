@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/components/ui/Screen';
@@ -11,55 +11,68 @@ export default function Home() {
 
   return (
     <Screen edges={['top']}>
-      <View style={styles.hero}>
-        <View style={styles.heroContent}>
-          <Text style={styles.heroTitle}>WATS</Text>
-          <Text style={styles.heroSubtitle}>Shop with ease. Great products, pay with mobile money.</Text>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.hero}>
+          <View style={styles.heroContent}>
+            <Text style={styles.heroTitle}>WATS</Text>
+            <Text style={styles.heroSubtitle}>Shop with ease. Great products, pay with mobile money.</Text>
+          </View>
+          <View style={styles.ctaRow}>
+            <Button
+              title="Browse products"
+              onPress={() => router.push('/(tabs)/products')}
+              style={styles.ctaPrimary}
+            />
+            <Pressable
+              style={({ pressed }) => [styles.ctaSecondary, pressed && styles.ctaPressed]}
+              onPress={() => router.push('/(tabs)/cart')}
+            >
+              <Ionicons name="cart-outline" size={22} color={colors.primary} />
+              <Text style={styles.ctaSecondaryText}>Cart</Text>
+            </Pressable>
+          </View>
         </View>
-        <View style={styles.ctaRow}>
-          <Button
-            title="Browse products"
-            onPress={() => router.push('/(tabs)/products')}
-            style={styles.ctaPrimary}
-          />
-          <Pressable
-            style={({ pressed }) => [styles.ctaSecondary, pressed && styles.ctaPressed]}
-            onPress={() => router.push('/(tabs)/cart')}
-          >
-            <Ionicons name="cart-outline" size={22} color={colors.primary} />
-            <Text style={styles.ctaSecondaryText}>Cart</Text>
-          </Pressable>
+        <View style={styles.quickLinks}>
+          <Card style={styles.quickCard}>
+            <Pressable
+              style={({ pressed }) => [styles.quickPress, pressed && { opacity: 0.8 }]}
+              onPress={() => router.push('/(tabs)/products')}
+            >
+              <View style={styles.quickIconWrap}>
+                <Ionicons name="grid-outline" size={28} color={colors.primary} />
+              </View>
+              <Text style={styles.quickLabel}>All products</Text>
+            </Pressable>
+          </Card>
+          <Card style={styles.quickCard}>
+            <Pressable
+              style={({ pressed }) => [styles.quickPress, pressed && { opacity: 0.8 }]}
+              onPress={() => router.push('/(tabs)/orders')}
+            >
+              <View style={styles.quickIconWrap}>
+                <Ionicons name="receipt-outline" size={28} color={colors.primary} />
+              </View>
+              <Text style={styles.quickLabel}>My orders</Text>
+            </Pressable>
+          </Card>
         </View>
-      </View>
-      <View style={styles.quickLinks}>
-        <Card style={styles.quickCard}>
-          <Pressable
-            style={({ pressed }) => [styles.quickPress, pressed && { opacity: 0.8 }]}
-            onPress={() => router.push('/(tabs)/products')}
-          >
-            <View style={styles.quickIconWrap}>
-              <Ionicons name="grid-outline" size={28} color={colors.primary} />
-            </View>
-            <Text style={styles.quickLabel}>All products</Text>
-          </Pressable>
-        </Card>
-        <Card style={styles.quickCard}>
-          <Pressable
-            style={({ pressed }) => [styles.quickPress, pressed && { opacity: 0.8 }]}
-            onPress={() => router.push('/(tabs)/orders')}
-          >
-            <View style={styles.quickIconWrap}>
-              <Ionicons name="receipt-outline" size={28} color={colors.primary} />
-            </View>
-            <Text style={styles.quickLabel}>My orders</Text>
-          </Pressable>
-        </Card>
-      </View>
+      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 100,
+  },
   hero: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,

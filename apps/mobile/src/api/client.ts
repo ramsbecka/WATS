@@ -404,22 +404,32 @@ export async function requestReturn(orderId: string, reason?: string, comment?: 
 // =============================================================================
 
 export async function getReferralCode(userId: string): Promise<string> {
-  // Check if user has a referral code
-  const { data: existing } = await supabase
-    .from('referral_codes')
-    .select('code')
-    .eq('user_id', userId)
-    .eq('is_active', true)
-    .single();
-  
-  if (existing?.code) {
-    return existing.code;
+  try {
+    // Check if user has a referral code
+    const { data: existing, error: checkError } = await supabase
+      .from('referral_codes')
+      .select('code')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .maybeSingle();
+    
+    if (checkError && checkError.code !== 'PGRST116') {
+      // PGRST116 is "not found" which is OK
+      throw checkError;
+    }
+    
+    if (existing?.code) {
+      return existing.code;
+    }
+    
+    // Generate new code using function
+    const { data, error } = await supabase.rpc('ensure_referral_code', { p_user_id: userId });
+    if (error) throw error;
+    return data || '';
+  } catch (error: any) {
+    console.error('Failed to get referral code:', error);
+    throw error;
   }
-  
-  // Generate new code using function
-  const { data, error } = await supabase.rpc('ensure_referral_code', { p_user_id: userId });
-  if (error) throw error;
-  return data;
 }
 
 export async function getReferralStats(userId: string) {

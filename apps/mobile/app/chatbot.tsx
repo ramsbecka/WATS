@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Screen } from '@/components/ui/Screen';
 import Chatbot from '@/components/ai/Chatbot';
@@ -11,7 +11,7 @@ export default function ChatbotScreen() {
   const { user } = useAuthStore();
 
   return (
-    <Screen edges={['top', 'bottom']} style={styles.screen}>
+    <Screen edges={['top']} style={styles.screen}>
       <Chatbot userId={user?.id} onClose={() => router.back()} />
     </Screen>
   );

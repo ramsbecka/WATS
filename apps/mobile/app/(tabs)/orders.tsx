@@ -77,16 +77,20 @@ export default function Orders() {
     );
   }
 
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <Text style={styles.title}>My orders</Text>
+      <Text style={styles.subtitle}>Your order history</Text>
+    </View>
+  );
+
   return (
     <Screen edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>My orders</Text>
-        <Text style={styles.subtitle}>Your order history</Text>
-      </View>
       <FlatList
         data={orders}
         keyExtractor={(o) => o.id}
         contentContainerStyle={styles.list}
+        ListHeaderComponent={renderHeader}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
         ListEmptyComponent={
           <View style={styles.empty}>

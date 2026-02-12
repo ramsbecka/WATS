@@ -239,6 +239,30 @@ export async function trackEvent(
   await Promise.allSettled(promises);
 }
 
+export async function trackProductView(productId: string, productName: string): Promise<void> {
+  try {
+    const { trackProductView: trackProductViewAnalytics } = await import('./analytics');
+    await trackProductViewAnalytics(productId, productName);
+  } catch (error) {
+    // Analytics not configured, skip
+  }
+  
+  // Also track via generic event
+  await trackEvent('product_view', { product_id: productId, product_name: productName });
+}
+
+export async function trackAddToCart(productId: string, productName: string, value: number): Promise<void> {
+  try {
+    const { trackAddToCart: trackAddToCartAnalytics } = await import('./analytics');
+    await trackAddToCartAnalytics(productId, productName, value);
+  } catch (error) {
+    // Analytics not configured, skip
+  }
+  
+  // Also track via generic event
+  await trackEvent('add_to_cart', { product_id: productId, product_name: productName, value });
+}
+
 // =============================================================================
 // Fraud Detection
 // =============================================================================

@@ -38,17 +38,17 @@ CREATE INDEX IF NOT EXISTS idx_referrals_code ON public.referrals(referral_code_
 CREATE OR REPLACE FUNCTION public.generate_referral_code()
 RETURNS TEXT AS $$
 DECLARE
-  code TEXT;
+  v_code TEXT;
   exists_check BOOLEAN;
 BEGIN
   LOOP
     -- Generate 8-character alphanumeric code
-    code := UPPER(substring(md5(random()::text || clock_timestamp()::text) from 1 for 8));
+    v_code := UPPER(substring(md5(random()::text || clock_timestamp()::text) from 1 for 8));
     -- Check if code exists
-    SELECT EXISTS(SELECT 1 FROM public.referral_codes WHERE referral_codes.code = code) INTO exists_check;
+    SELECT EXISTS(SELECT 1 FROM public.referral_codes WHERE public.referral_codes.code = v_code) INTO exists_check;
     EXIT WHEN NOT exists_check;
   END LOOP;
-  RETURN code;
+  RETURN v_code;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -60,9 +60,9 @@ DECLARE
   new_code TEXT;
 BEGIN
   -- Check if user already has a referral code
-  SELECT code INTO existing_code
+  SELECT public.referral_codes.code INTO existing_code
   FROM public.referral_codes
-  WHERE user_id = p_user_id AND is_active = true
+  WHERE public.referral_codes.user_id = p_user_id AND public.referral_codes.is_active = true
   LIMIT 1;
   
   IF existing_code IS NOT NULL THEN
@@ -75,7 +75,7 @@ BEGIN
   -- Insert new referral code
   INSERT INTO public.referral_codes (user_id, code)
   VALUES (p_user_id, new_code)
-  ON CONFLICT DO NOTHING;
+  ON CONFLICT (code) DO NOTHING;
   
   RETURN new_code;
 END;
@@ -125,6 +125,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Drop trigger if exists before creating
+DROP TRIGGER IF EXISTS trigger_ensure_single_default_address ON public.user_addresses;
+
 CREATE TRIGGER trigger_ensure_single_default_address
   BEFORE INSERT OR UPDATE ON public.user_addresses
   FOR EACH ROW
@@ -169,6 +172,15 @@ CREATE INDEX IF NOT EXISTS idx_store_followed_vendor ON public.store_followed(ve
 
 -- Referral Codes: Users can read their own codes, insert their own
 ALTER TABLE public.referral_codes ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  DROP POLICY IF EXISTS "Users can view their own referral codes" ON public.referral_codes;
+  DROP POLICY IF EXISTS "Users can insert their own referral codes" ON public.referral_codes;
+  DROP POLICY IF EXISTS "Users can update their own referral codes" ON public.referral_codes;
+  DROP POLICY IF EXISTS "Anyone can verify referral codes" ON public.referral_codes;
+END $$;
+
 CREATE POLICY "Users can view their own referral codes"
   ON public.referral_codes FOR SELECT
   USING (auth.uid() = user_id);
@@ -178,9 +190,19 @@ CREATE POLICY "Users can insert their own referral codes"
 CREATE POLICY "Users can update their own referral codes"
   ON public.referral_codes FOR UPDATE
   USING (auth.uid() = user_id);
+CREATE POLICY "Anyone can verify referral codes"
+  ON public.referral_codes FOR SELECT
+  USING (is_active = true);
 
 -- Referrals: Users can view referrals they made or were referred by
 ALTER TABLE public.referrals ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  DROP POLICY IF EXISTS "Users can view their referrals" ON public.referrals;
+  DROP POLICY IF EXISTS "System can insert referrals" ON public.referrals;
+END $$;
+
 CREATE POLICY "Users can view their referrals"
   ON public.referrals FOR SELECT
   USING (auth.uid() = referrer_id OR auth.uid() = referred_id);
@@ -190,6 +212,15 @@ CREATE POLICY "System can insert referrals"
 
 -- User Addresses: Users can manage their own addresses
 ALTER TABLE public.user_addresses ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  DROP POLICY IF EXISTS "Users can view their own addresses" ON public.user_addresses;
+  DROP POLICY IF EXISTS "Users can insert their own addresses" ON public.user_addresses;
+  DROP POLICY IF EXISTS "Users can update their own addresses" ON public.user_addresses;
+  DROP POLICY IF EXISTS "Users can delete their own addresses" ON public.user_addresses;
+END $$;
+
 CREATE POLICY "Users can view their own addresses"
   ON public.user_addresses FOR SELECT
   USING (auth.uid() = user_id);
@@ -205,6 +236,14 @@ CREATE POLICY "Users can delete their own addresses"
 
 -- Recently Viewed: Users can manage their own viewing history
 ALTER TABLE public.recently_viewed ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  DROP POLICY IF EXISTS "Users can view their own recently viewed" ON public.recently_viewed;
+  DROP POLICY IF EXISTS "Users can insert their own recently viewed" ON public.recently_viewed;
+  DROP POLICY IF EXISTS "Users can delete their own recently viewed" ON public.recently_viewed;
+END $$;
+
 CREATE POLICY "Users can view their own recently viewed"
   ON public.recently_viewed FOR SELECT
   USING (auth.uid() = user_id);
@@ -217,6 +256,14 @@ CREATE POLICY "Users can delete their own recently viewed"
 
 -- Store Followed: Users can manage their followed stores
 ALTER TABLE public.store_followed ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  DROP POLICY IF EXISTS "Users can view their own followed stores" ON public.store_followed;
+  DROP POLICY IF EXISTS "Users can insert their own followed stores" ON public.store_followed;
+  DROP POLICY IF EXISTS "Users can delete their own followed stores" ON public.store_followed;
+END $$;
+
 CREATE POLICY "Users can view their own followed stores"
   ON public.store_followed FOR SELECT
   USING (auth.uid() = user_id);
@@ -226,8 +273,3 @@ CREATE POLICY "Users can insert their own followed stores"
 CREATE POLICY "Users can delete their own followed stores"
   ON public.store_followed FOR DELETE
   USING (auth.uid() = user_id);
-
--- Public read access for referral code verification (without user_id)
-CREATE POLICY "Anyone can verify referral codes"
-  ON public.referral_codes FOR SELECT
-  USING (is_active = true);

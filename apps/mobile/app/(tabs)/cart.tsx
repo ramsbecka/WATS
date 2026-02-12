@@ -93,16 +93,31 @@ export default function Cart() {
     );
   }
 
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <Text style={styles.title}>Cart</Text>
+      <Text style={styles.count}>{count()} items</Text>
+    </View>
+  );
+
+  const renderFooter = () => (
+    <View style={styles.footer}>
+      <Card style={styles.totalCard}>
+        <Text style={styles.totalLabel}>Total</Text>
+        <Text style={styles.totalValue}>TZS {total().toLocaleString()}</Text>
+      </Card>
+      <Button title="Pay now (M-Pesa)" onPress={() => router.push('/checkout')} style={styles.checkoutBtn} />
+    </View>
+  );
+
   return (
     <Screen edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Cart</Text>
-        <Text style={styles.count}>{count()} items</Text>
-      </View>
       <FlatList
         data={items}
         keyExtractor={(i) => i.id}
         contentContainerStyle={styles.list}
+        ListHeaderComponent={renderHeader}
+        ListFooterComponent={renderFooter}
         renderItem={({ item }) => (
           <Card style={styles.row}>
             <View style={styles.rowContent}>
@@ -119,13 +134,6 @@ export default function Cart() {
           </Card>
         )}
       />
-      <View style={styles.footer}>
-        <Card style={styles.totalCard}>
-          <Text style={styles.totalLabel}>Total</Text>
-          <Text style={styles.totalValue}>TZS {total().toLocaleString()}</Text>
-        </Card>
-        <Button title="Pay now (M-Pesa)" onPress={() => router.push('/checkout')} style={styles.checkoutBtn} />
-      </View>
     </Screen>
   );
 }

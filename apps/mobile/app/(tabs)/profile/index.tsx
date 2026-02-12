@@ -154,10 +154,12 @@ export default function Profile() {
       >
         {/* Header with Gradient */}
         <View style={styles.gradientHeader}>
-          <View style={styles.headerTop}>
+          {/* Header Top Bar with Title and Icons */}
+          <View style={styles.headerTopBar}>
+            <Text style={styles.headerTitle}>Profile</Text>
             <View style={styles.headerRight}>
               <Text style={styles.headerLanguage}>English</Text>
-              <Pressable onPress={() => router.push('/notifications')} style={styles.headerIconBtn}>
+              <Pressable onPress={() => router.push('/chatbot')} style={styles.headerIconBtn}>
                 <Ionicons name="chatbubble-outline" size={22} color={colors.surface} />
               </Pressable>
               <Pressable onPress={() => router.push('/(tabs)/profile/edit')} style={styles.headerIconBtn}>
@@ -434,16 +436,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     backgroundColor: colors.primary,
   },
-  headerTop: {
+  headerTopBar: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: spacing.lg,
+  },
+  headerTitle: {
+    ...typography.heading,
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.surface,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
   },
   headerLanguage: {
     ...typography.body,

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, FlatList, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { chatWithAI, AIChatMessage } from '@/services/ai';
 import { colors, spacing, typography, radius } from '@/theme/tokens';
@@ -20,6 +21,7 @@ export default function Chatbot({ userId, orderId, onClose }: ChatbotProps) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -27,6 +29,22 @@ export default function Chatbot({ userId, orderId, onClose }: ChatbotProps) {
       flatListRef.current?.scrollToEnd({ animated: true });
     }, 100);
   }, [messages]);
+
+  useEffect(() => {
+    // Scroll to bottom when keyboard shows
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+    };
+  }, []);
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
@@ -67,75 +85,102 @@ export default function Chatbot({ userId, orderId, onClose }: ChatbotProps) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={100}
-    >
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Ionicons name="chatbubbles" size={24} color={colors.primary} />
-          <Text style={styles.headerTitle}>Customer Support</Text>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <Ionicons name="chatbubbles" size={24} color={colors.primary} />
+            <Text style={styles.headerTitle}>Customer Support</Text>
+          </View>
+          {onClose && (
+            <Pressable onPress={onClose} style={styles.closeBtn}>
+              <Ionicons name="close" size={24} color={colors.textPrimary} />
+            </Pressable>
+          )}
         </View>
-        {onClose && (
-          <Pressable onPress={onClose} style={styles.closeBtn}>
-            <Ionicons name="close" size={24} color={colors.textPrimary} />
-          </Pressable>
-        )}
-      </View>
 
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        keyExtractor={(_, index) => `msg-${index}`}
-        contentContainerStyle={styles.messagesList}
-        renderItem={({ item }) => (
-          <View
-            style={[
-              styles.message,
-              item.role === 'user' ? styles.userMessage : styles.assistantMessage,
-            ]}
-          >
-            <Text
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(_, index) => `msg-${index}`}
+          contentContainerStyle={styles.messagesList}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          showsVerticalScrollIndicator={true}
+          renderItem={({ item }) => (
+            <View
               style={[
-                styles.messageText,
-                item.role === 'user' ? styles.userMessageText : styles.assistantMessageText,
+                styles.message,
+                item.role === 'user' ? styles.userMessage : styles.assistantMessage,
               ]}
             >
-              {item.content}
-            </Text>
-          </View>
-        )}
-      />
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          value={input}
-          onChangeText={setInput}
-          placeholder="Type your message..."
-          placeholderTextColor={colors.textMuted}
-          multiline
-          maxLength={500}
-          editable={!loading}
-        />
-        <Pressable
-          onPress={handleSend}
-          disabled={!input.trim() || loading}
-          style={[styles.sendBtn, (!input.trim() || loading) && styles.sendBtnDisabled]}
-        >
-          {loading ? (
-            <Ionicons name="hourglass-outline" size={20} color={colors.surface} />
-          ) : (
-            <Ionicons name="send" size={20} color={colors.surface} />
+              <Text
+                style={[
+                  styles.messageText,
+                  item.role === 'user' ? styles.userMessageText : styles.assistantMessageText,
+                ]}
+              >
+                {item.content}
+              </Text>
+            </View>
           )}
-        </Pressable>
-      </View>
-    </KeyboardAvoidingView>
+        />
+
+        <View style={styles.inputWrapper}>
+          <View style={styles.inputContainer}>
+            <TextInput
+              ref={inputRef}
+              style={styles.input}
+              value={input}
+              onChangeText={(text) => {
+                setInput(text);
+                // Scroll to bottom when typing
+                setTimeout(() => {
+                  flatListRef.current?.scrollToEnd({ animated: true });
+                }, 50);
+              }}
+              placeholder="Type your message..."
+              placeholderTextColor={colors.textMuted}
+              multiline
+              maxLength={500}
+              editable={!loading}
+              onFocus={() => {
+                // Scroll to bottom when input is focused
+                setTimeout(() => {
+                  flatListRef.current?.scrollToEnd({ animated: true });
+                }, 300);
+              }}
+              returnKeyType="send"
+              onSubmitEditing={handleSend}
+              blurOnSubmit={false}
+            />
+            <Pressable
+              onPress={handleSend}
+              disabled={!input.trim() || loading}
+              style={[styles.sendBtn, (!input.trim() || loading) && styles.sendBtnDisabled]}
+            >
+              {loading ? (
+                <Ionicons name="hourglass-outline" size={20} color={colors.surface} />
+              ) : (
+                <Ionicons name="send" size={20} color={colors.surface} />
+              )}
+            </Pressable>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -145,7 +190,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingTop: 50,
+    paddingTop: spacing.md,
     paddingBottom: spacing.md,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
@@ -194,13 +239,15 @@ const styles = StyleSheet.create({
   assistantMessageText: {
     color: colors.textPrimary,
   },
+  inputWrapper: {
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     padding: spacing.md,
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
     gap: spacing.sm,
   },
   input: {
