@@ -115,7 +115,7 @@ export default function Profile() {
   );
 
   const handleSignOut = () => {
-    signOut().then(() => router.replace('/auth/login'));
+    signOut().then(() => router.replace('/auth'));
   };
 
   if (!user) {

@@ -1,6 +1,7 @@
 /**
  * AI Services Integration Layer
- * Supports: OpenAI, Google Cloud AI, AWS AI Services, Firebase ML
+ * Supports: OpenAI, Google Cloud AI, AWS AI Services
+ * Analytics: Supabase (analytics_events table)
  */
 
 export interface AIRecommendation {
@@ -212,31 +213,14 @@ export async function trackEvent(
   eventName: string,
   params?: Record<string, any>
 ): Promise<void> {
-  // Track in multiple analytics services
-  const promises: Promise<void>[] = [];
-  
-  // Firebase Analytics (if available)
+  // Track using Supabase analytics
   try {
-    const { trackFirebaseEvent } = await import('./analytics');
-    promises.push(trackFirebaseEvent(eventName, params));
+    const { trackEvent: trackSupabaseEvent } = await import('./analytics');
+    await trackSupabaseEvent(eventName, params);
   } catch (error) {
-    // Firebase not configured, skip
+    // Analytics not configured, skip silently
+    console.debug('Analytics tracking failed:', error);
   }
-  
-  // Custom analytics endpoint
-  try {
-    promises.push(
-      fetch('/api/analytics/track', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event: eventName, params }),
-      }).then(() => {})
-    );
-  } catch (error) {
-    // Analytics endpoint not available
-  }
-  
-  await Promise.allSettled(promises);
 }
 
 export async function trackProductView(productId: string, productName: string): Promise<void> {

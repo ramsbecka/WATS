@@ -1,30 +1,49 @@
 /**
  * Analytics Integration
- * Supports: Firebase Analytics, Custom Analytics
+ * Uses Supabase for analytics tracking
  */
 
-export async function trackFirebaseEvent(
+import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/store/auth';
+
+// Generate or retrieve session ID
+let sessionId: string | null = null;
+
+function getSessionId(): string {
+  if (!sessionId) {
+    sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+  }
+  return sessionId;
+}
+
+export async function trackEvent(
   eventName: string,
   params?: Record<string, any>
 ): Promise<void> {
   try {
-    // @ts-ignore - Dynamic import for optional dependency
-    const analytics = require('@react-native-firebase/analytics');
-    const analyticsInstance = analytics().default();
+    const { user } = useAuthStore.getState();
     
-    await analyticsInstance.logEvent(eventName, params || {});
+    const { error } = await supabase
+      .from('analytics_events')
+      .insert({
+        event_name: eventName,
+        event_params: params || {},
+        user_id: user?.id || null,
+        session_id: getSessionId(),
+        created_at: new Date().toISOString(),
+      });
+    
+    if (error) {
+      console.debug('Analytics tracking failed:', error.message);
+    }
   } catch (error) {
-    // Firebase Analytics not configured, skip silently
-    console.debug('Firebase Analytics not available');
+    // Silent fail - analytics should not break the app
+    console.debug('Analytics tracking error:', error);
   }
 }
 
 export async function trackScreenView(screenName: string): Promise<void> {
-  try {
-    await trackFirebaseEvent('screen_view', { screen_name: screenName });
-  } catch (error) {
-    // Silent fail
-  }
+  await trackEvent('screen_view', { screen_name: screenName });
 }
 
 export async function trackPurchase(
@@ -33,38 +52,26 @@ export async function trackPurchase(
   currency: string = 'TZS',
   items?: Array<{ item_id: string; item_name: string; quantity: number; price: number }>
 ): Promise<void> {
-  try {
-    await trackFirebaseEvent('purchase', {
-      transaction_id: transactionId,
-      value,
-      currency,
-      items: items || [],
-    });
-  } catch (error) {
-    // Silent fail
-  }
+  await trackEvent('purchase', {
+    transaction_id: transactionId,
+    value,
+    currency,
+    items: items || [],
+  });
 }
 
 export async function trackProductView(productId: string, productName: string): Promise<void> {
-  try {
-    await trackFirebaseEvent('view_item', {
-      item_id: productId,
-      item_name: productName,
-    });
-  } catch (error) {
-    // Silent fail
-  }
+  await trackEvent('view_item', {
+    item_id: productId,
+    item_name: productName,
+  });
 }
 
 export async function trackAddToCart(productId: string, productName: string, value: number): Promise<void> {
-  try {
-    await trackFirebaseEvent('add_to_cart', {
-      item_id: productId,
-      item_name: productName,
-      value,
-      currency: 'TZS',
-    });
-  } catch (error) {
-    // Silent fail
-  }
+  await trackEvent('add_to_cart', {
+    item_id: productId,
+    item_name: productName,
+    value,
+    currency: 'TZS',
+  });
 }

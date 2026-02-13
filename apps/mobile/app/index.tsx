@@ -14,7 +14,7 @@ export default function Index() {
   }, [loading, user]);
 
   useEffect(() => {
-    if (!loading && !user) router.replace('/auth/login');
+    if (!loading && !user) router.replace('/auth');
   }, [loading, user]);
 
   // Loading: show spinner (use View + minHeight so it's visible on web too)

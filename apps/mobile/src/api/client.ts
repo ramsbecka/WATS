@@ -13,6 +13,7 @@ export async function initiateCheckout(params: {
   shipping_address: { name: string; phone: string; region: string; district: string; ward?: string; street: string };
   idempotency_key: string;
   payment_provider?: 'mpesa' | 'airtel_money' | 'mixx' | 'halopesa';
+  voucher_code?: string;
 }) {
   const idempotencyKey = params.idempotency_key || `ck-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const headers = await getAuthHeaders();
@@ -20,7 +21,11 @@ export async function initiateCheckout(params: {
   const res = await fetch(`${FUNCTIONS_URL}/checkout-initiate`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ shipping_address: params.shipping_address, payment_provider: params.payment_provider ?? 'mpesa' }),
+    body: JSON.stringify({
+      shipping_address: params.shipping_address,
+      payment_provider: params.payment_provider ?? 'mpesa',
+      voucher_code: params.voucher_code,
+    }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Checkout failed');
@@ -38,6 +43,30 @@ export async function getOrder(orderId: string) {
     .eq('id', orderId)
     .single();
   if (error) throw error;
+  return data;
+}
+
+export async function getPaymentStatus(orderId: string) {
+  const { data, error } = await supabase
+    .from('payments')
+    .select('id, status, provider_reference, provider_callback, amount_tzs, created_at, updated_at')
+    .eq('order_id', orderId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function verifyPayment(paymentId: string) {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${FUNCTIONS_URL}/payment-verify`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ payment_id: paymentId }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Payment verification failed');
   return data;
 }
 
@@ -104,7 +133,7 @@ export async function verifyVoucherCode(code: string) {
 export async function getProducts(opts?: { categoryId?: string; search?: string; limit?: number; offset?: number }) {
   let q = supabase
     .from('products')
-    .select('id, name_sw, name_en, price_tzs, product_images!inner(url)', { count: 'exact' })
+    .select('id, name_sw, name_en, price_tzs, compare_at_price_tzs, product_images!inner(url)', { count: 'exact' })
     .eq('is_active', true)
     .order('created_at', { ascending: false });
   if (opts?.categoryId) q = q.eq('category_id', opts.categoryId);
@@ -651,4 +680,26 @@ export async function isFollowingStore(userId: string, vendorId: string): Promis
     .eq('vendor_id', vendorId)
     .single();
   return !!data;
+}
+
+// Splash Images
+export async function getSplashImages() {
+  const { data, error } = await supabase
+    .from('splash_images')
+    .select('*')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// Banners
+export async function getBanners() {
+  const { data, error } = await supabase
+    .from('banners')
+    .select('*')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
 }

@@ -24,6 +24,7 @@ interface CheckoutBody {
   };
   idempotency_key?: string;
   payment_provider?: 'mpesa' | 'airtel_money' | 'mixx' | 'halopesa';
+  voucher_code?: string;
 }
 
 Deno.serve(async (req) => {
@@ -58,7 +59,7 @@ Deno.serve(async (req) => {
     }
 
     const body: CheckoutBody = await req.json();
-    const { shipping_address, payment_provider = 'mpesa' } = body;
+    const { shipping_address, payment_provider = 'mpesa', voucher_code } = body;
     const validation = validateShippingAddress(shipping_address);
     if (!validation.valid) {
       return new Response(
@@ -137,9 +138,37 @@ Deno.serve(async (req) => {
         total_tzs: total,
       });
     }
+    
+    // Apply voucher discount if provided
+    let voucherDiscount = 0;
+    let voucherId: string | null = null;
+    if (voucher_code) {
+      const { data: voucher } = await supabase
+        .from('vouchers')
+        .select('id, discount_percentage, discount_amount_tzs, min_order_amount_tzs, max_discount_amount_tzs, usage_count, max_usage')
+        .eq('code', voucher_code.toUpperCase())
+        .eq('is_used', false)
+        .gte('valid_until', new Date().toISOString())
+        .single();
+      
+      if (voucher && subtotal >= Number(voucher.min_order_amount_tzs || 0)) {
+        if (voucher.usage_count < voucher.max_usage) {
+          voucherId = voucher.id;
+          if (voucher.discount_percentage) {
+            voucherDiscount = (subtotal * Number(voucher.discount_percentage)) / 100;
+            if (voucher.max_discount_amount_tzs) {
+              voucherDiscount = Math.min(voucherDiscount, Number(voucher.max_discount_amount_tzs));
+            }
+          } else if (voucher.discount_amount_tzs) {
+            voucherDiscount = Number(voucher.discount_amount_tzs);
+          }
+        }
+      }
+    }
+    
     const shippingTzs = 0; // TODO: calculate from region
     const taxTzs = 0;
-    const totalTzs = subtotal + shippingTzs + taxTzs;
+    const totalTzs = Math.max(0, subtotal - voucherDiscount + shippingTzs + taxTzs);
 
     // Create order (order_number from trigger)
     const { data: order, error: orderErr } = await supabase
@@ -153,6 +182,7 @@ Deno.serve(async (req) => {
         total_tzs: totalTzs,
         shipping_address: shipping_address,
         idempotency_key: idempotencyKey,
+        voucher_id: voucherId,
       })
       .select('id, order_number')
       .single();
@@ -174,6 +204,8 @@ Deno.serve(async (req) => {
         total_tzs: oi.total_tzs,
       }))
     );
+
+    // Note: Voucher will be marked as used automatically via trigger when payment completes
 
     // Create payment record
     const { data: payment, error: payInsertErr } = await supabase
@@ -226,14 +258,22 @@ Deno.serve(async (req) => {
             .eq('id', payment.id);
         }
         if (!stk.success) {
+          // Update payment status to failed
+          await supabase
+            .from('payments')
+            .update({ status: 'failed', provider_callback: { error: stk.errorMessage, errorCode: stk.errorCode } })
+            .eq('id', payment.id);
+          
           return new Response(
             JSON.stringify({
               order_id: order.id,
               order_number: order.order_number,
               payment_id: payment.id,
               stk_push_failed: true,
-              error: stk.errorMessage,
+              error: stk.errorMessage || 'Failed to send M-Pesa payment request',
+              error_code: stk.errorCode,
               code: 'STK_PUSH_FAILED',
+              message: 'Payment request failed. Please check your phone number and try again.',
             }),
             { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } }
           );

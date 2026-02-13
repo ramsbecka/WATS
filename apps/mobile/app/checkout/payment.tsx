@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/components/ui/Screen';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, typography } from '@/theme/tokens';
+import { initiateCheckout } from '@/api/client';
 
 export default function PaymentStatus() {
   const { orderId, orderNumber } = useLocalSearchParams<{ orderId?: string; orderNumber?: string }>();
@@ -14,6 +15,11 @@ export default function PaymentStatus() {
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'initiated' | 'completed' | 'failed'>('pending');
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const [paymentId, setPaymentId] = useState<string | null>(null);
+  const [providerReference, setProviderReference] = useState<string | null>(null);
+  const subscriptionRef = useRef<any>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasOrder = Boolean(orderId && orderNumber);
 
   const checkPaymentStatus = async () => {
@@ -22,13 +28,15 @@ export default function PaymentStatus() {
     try {
       const { data: payment } = await supabase
         .from('payments')
-        .select('status, provider_reference')
+        .select('id, status, provider_reference, provider_callback')
         .eq('order_id', orderId)
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
       
       if (payment) {
+        setPaymentId(payment.id);
+        setProviderReference(payment.provider_reference);
         setPaymentStatus(payment.status as any);
         if (payment.status === 'completed') {
           setLoading(false);
@@ -44,9 +52,138 @@ export default function PaymentStatus() {
       console.error('Payment check error:', e);
     } finally {
       setChecking(false);
-      if (paymentStatus === 'pending') {
+      if (paymentStatus === 'pending' || paymentStatus === 'initiated') {
         setLoading(false);
       }
+    }
+  };
+
+  // Setup real-time subscription for payment status updates
+  useEffect(() => {
+    if (!orderId || paymentStatus === 'completed' || paymentStatus === 'failed') return;
+
+    // Initial check
+    checkPaymentStatus();
+
+    // Subscribe to payment status changes
+    let paymentChannel: any = null;
+    let orderChannel: any = null;
+    
+    if (paymentId) {
+      paymentChannel = supabase
+        .channel(`payment-${paymentId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'payments',
+            filter: `id=eq.${paymentId}`,
+          },
+          (payload) => {
+            const newStatus = payload.new.status as any;
+            setPaymentStatus(newStatus);
+            if (newStatus === 'completed') {
+              setLoading(false);
+              setTimeout(() => {
+                router.replace(`/orders/${orderId}`);
+              }, 2000);
+            } else if (newStatus === 'failed') {
+              setLoading(false);
+            }
+          }
+        )
+        .subscribe();
+
+      // Also subscribe to order status changes
+      orderChannel = supabase
+        .channel(`order-${orderId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'orders',
+            filter: `id=eq.${orderId}`,
+          },
+          (payload) => {
+            const orderStatus = payload.new.status;
+            if (orderStatus === 'confirmed' && paymentStatus !== 'completed') {
+              checkPaymentStatus();
+            }
+          }
+        )
+        .subscribe();
+      
+      subscriptionRef.current = { paymentChannel, orderChannel };
+    }
+
+    // Fallback polling every 5 seconds (in case realtime fails)
+    const interval = setInterval(() => {
+      if (paymentStatus === 'pending' || paymentStatus === 'initiated') {
+        checkPaymentStatus();
+      }
+    }, 5000);
+
+    // Payment timeout: 5 minutes
+    timeoutRef.current = setTimeout(() => {
+      if (paymentStatus === 'pending' || paymentStatus === 'initiated') {
+        Alert.alert(
+          'Payment Timeout',
+          'Payment is taking longer than expected. Please check your phone or try again.',
+          [
+            { text: 'Retry Payment', onPress: handleRetryPayment },
+            { text: 'Cancel', style: 'cancel' },
+          ]
+        );
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => {
+      if (subscriptionRef.current) {
+        if (subscriptionRef.current.paymentChannel) {
+          subscriptionRef.current.paymentChannel.unsubscribe();
+        }
+        if (subscriptionRef.current.orderChannel) {
+          subscriptionRef.current.orderChannel.unsubscribe();
+        }
+      }
+      clearInterval(interval);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId, paymentId]);
+
+  const handleRetryPayment = async () => {
+    if (!orderId) return;
+    setRetrying(true);
+    try {
+      // Get order details for retry
+      const { data: order } = await supabase
+        .from('orders')
+        .select('shipping_address, total_tzs')
+        .eq('id', orderId)
+        .single();
+
+      if (order) {
+        // Retry payment with new idempotency key
+        const result = await initiateCheckout({
+          shipping_address: order.shipping_address as any,
+          idempotency_key: `retry-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          payment_provider: 'mpesa',
+        });
+        
+        // Update payment status
+        setPaymentStatus('initiated');
+        setLoading(true);
+        Alert.alert('Success', 'Payment request sent. Check your phone for M-Pesa prompt.');
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to retry payment. Please try again.');
+    } finally {
+      setRetrying(false);
     }
   };
 
@@ -116,7 +253,21 @@ export default function PaymentStatus() {
           </Card>
         )}
         {hasOrder && paymentStatus !== 'completed' && (
-          <Button title="View order" onPress={() => router.replace(`/orders/${orderId}`)} style={styles.btn} />
+          <>
+            <Button 
+              title="View order" 
+              onPress={() => router.replace(`/orders/${orderId}`)} 
+              style={styles.btn} 
+            />
+            {(paymentStatus === 'failed' || paymentStatus === 'pending') && (
+              <Button 
+                title={retrying ? "Retrying..." : "Retry Payment"} 
+                onPress={handleRetryPayment} 
+                loading={retrying}
+                style={styles.btn} 
+              />
+            )}
+          </>
         )}
         <Button title="Back to home" onPress={() => router.replace('/(tabs)')} variant="outline" />
       </View>

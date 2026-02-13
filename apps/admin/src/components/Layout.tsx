@@ -19,6 +19,8 @@ import {
   LogOut,
   Ticket,
   UserPlus,
+  Image as ImageIcon,
+  RectangleHorizontal,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
@@ -38,6 +40,8 @@ const nav = [
   { href: '/voucher-settings', label: 'Voucher Settings', Icon: Ticket },
   { href: '/vouchers', label: 'Vouchers', Icon: Ticket },
   { href: '/referral-codes', label: 'Referral Codes', Icon: UserPlus },
+  { href: '/splash-images', label: 'Splash Images', Icon: ImageIcon },
+  { href: '/banners', label: 'Banners', Icon: RectangleHorizontal },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {

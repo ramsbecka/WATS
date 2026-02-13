@@ -9,6 +9,7 @@ export default function Payments() {
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [refunding, setRefunding] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -26,6 +27,55 @@ export default function Payments() {
       setLoading(false);
     });
   }, [statusFilter]);
+
+  const handleRefund = async (paymentId: string, orderId: string) => {
+    if (!confirm('Are you sure you want to refund this payment?')) return;
+    setRefunding(paymentId);
+    try {
+      // Update payment status to refunded
+      const { error: payError } = await supabase
+        .from('payments')
+        .update({ status: 'refunded', updated_at: new Date().toISOString() })
+        .eq('id', paymentId);
+      
+      if (payError) throw payError;
+
+      // Update order status to cancelled
+      await supabase
+        .from('orders')
+        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .eq('id', orderId);
+
+      // Create return record if doesn't exist
+      const { data: existingReturn } = await supabase
+        .from('returns')
+        .select('id')
+        .eq('order_id', orderId)
+        .maybeSingle();
+      
+      if (!existingReturn) {
+        const { data: order } = await supabase
+          .from('orders')
+          .select('total_tzs')
+          .eq('id', orderId)
+          .single();
+        
+        await supabase.from('returns').insert({
+          order_id: orderId,
+          status: 'refunded',
+          reason: 'Admin refund',
+          refund_amount_tzs: order?.total_tzs || 0,
+        });
+      }
+
+      // Reload payments
+      setStatusFilter(statusFilter);
+    } catch (error: any) {
+      alert('Refund failed: ' + (error.message || 'Unknown error'));
+    } finally {
+      setRefunding(null);
+    }
+  };
 
   return (
     <div>
@@ -62,6 +112,7 @@ export default function Payments() {
                 <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Reference</th>
                 <th className="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Amount (TZS)</th>
                 <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Date</th>
+                <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
@@ -91,6 +142,17 @@ export default function Payments() {
                   </td>
                   <td className="px-5 py-3.5 text-right text-sm font-medium text-slate-900">{Number(p.amount_tzs).toLocaleString()}</td>
                   <td className="px-5 py-3.5 text-sm text-slate-500">{new Date(p.created_at).toLocaleString()}</td>
+                  <td className="px-5 py-3.5">
+                    {p.status === 'completed' && (
+                      <button
+                        onClick={() => handleRefund(p.id, p.order_id)}
+                        disabled={refunding === p.id}
+                        className="rounded-md bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+                      >
+                        {refunding === p.id ? 'Processing...' : 'Refund'}
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
