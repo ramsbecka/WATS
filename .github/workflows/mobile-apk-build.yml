@@ -80,14 +80,23 @@ jobs:
           echo "EXPO_PUBLIC_SUPABASE_URL=$EXPO_PUBLIC_SUPABASE_URL" > .env
           echo "EXPO_PUBLIC_SUPABASE_ANON_KEY=$EXPO_PUBLIC_SUPABASE_ANON_KEY" >> .env
 
+      - name: Check Expo token
+        id: check-expo-token
+        run: |
+          if [ -n "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "has_expo_token=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_expo_token=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Login to Expo (if token provided)
-        if: ${{ secrets.EXPO_TOKEN != '' }}
+        if: steps.check-expo-token.outputs.has_expo_token == 'true'
         working-directory: apps/mobile
         run: |
           eas login --non-interactive --token ${{ secrets.EXPO_TOKEN }}
 
       - name: Build APK with EAS (if token provided)
-        if: ${{ secrets.EXPO_TOKEN != '' }}
+        if: steps.check-expo-token.outputs.has_expo_token == 'true'
         working-directory: apps/mobile
         env:
           EAS_BUILD_PROFILE: ${{ github.event.inputs.release_type || 'development' }}
@@ -95,7 +104,7 @@ jobs:
           eas build --platform android --profile ${{ github.event.inputs.release_type || 'development' }} --non-interactive --no-wait
 
       - name: Build APK locally (fallback)
-        if: ${{ secrets.EXPO_TOKEN == '' }}
+        if: steps.check-expo-token.outputs.has_expo_token == 'false'
         working-directory: apps/mobile
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
@@ -186,14 +195,23 @@ jobs:
           echo "EXPO_PUBLIC_SUPABASE_URL=$EXPO_PUBLIC_SUPABASE_URL" > .env
           echo "EXPO_PUBLIC_SUPABASE_ANON_KEY=$EXPO_PUBLIC_SUPABASE_ANON_KEY" >> .env
 
+      - name: Check Expo token
+        id: check-expo-token-aab
+        run: |
+          if [ -n "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "has_expo_token=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_expo_token=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Login to Expo
-        if: ${{ secrets.EXPO_TOKEN != '' }}
+        if: steps.check-expo-token-aab.outputs.has_expo_token == 'true'
         working-directory: apps/mobile
         run: |
           eas login --non-interactive --token ${{ secrets.EXPO_TOKEN }}
 
       - name: Build AAB with EAS
-        if: ${{ secrets.EXPO_TOKEN != '' }}
+        if: steps.check-expo-token-aab.outputs.has_expo_token == 'true'
         working-directory: apps/mobile
         env:
           EAS_BUILD_PROFILE: ${{ github.event.inputs.release_type || 'production' }}
@@ -201,7 +219,7 @@ jobs:
           eas build --platform android --profile ${{ github.event.inputs.release_type || 'production' }} --non-interactive --no-wait
 
       - name: Build AAB locally (fallback)
-        if: ${{ secrets.EXPO_TOKEN == '' }}
+        if: steps.check-expo-token-aab.outputs.has_expo_token == 'false'
         working-directory: apps/mobile
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
