@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Image, FlatList, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Image, FlatList, Dimensions, AppState, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/components/ui/Screen';
-import { getCategories, getProducts, getBanners } from '@/api/client';
+import { getCategories, getProducts, getBanners, subscribeToCategories, subscribeToProducts } from '@/api/client';
 import { colors, spacing, typography, radius } from '@/theme/tokens';
 import { useAuthStore } from '@/store/auth';
 import ProductRecommendations from '@/components/ai/ProductRecommendations';
@@ -19,6 +19,7 @@ export default function Home() {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [banners, setBanners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -26,6 +27,28 @@ export default function Home() {
 
   useEffect(() => {
     loadData();
+
+    // Subscribe to real-time changes
+    const unsubscribeCategories = subscribeToCategories((categories) => {
+      setCategories(categories);
+    });
+
+    const unsubscribeProducts = subscribeToProducts(() => {
+      loadData(); // Reload all data when products change
+    });
+
+    // Refresh data when app comes to foreground
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        loadData();
+      }
+    });
+
+    return () => {
+      unsubscribeCategories();
+      unsubscribeProducts();
+      subscription.remove();
+    };
   }, []);
 
 
@@ -44,11 +67,11 @@ export default function Home() {
     }
   }, [banners.length, currentBannerIndex]);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (skipLoading = false) => {
+    if (!skipLoading) setLoading(true);
     try {
       const [cats, products, bannerData] = await Promise.all([
-        getCategories(true),
+        getCategories(false), // Disable cache to get fresh data
         getProducts({ limit: 20 }),
         getBanners(),
       ]);
@@ -64,7 +87,13 @@ export default function Home() {
       setBanners([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData(true);
   };
 
 
@@ -416,6 +445,7 @@ export default function Home() {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
       >
         {renderSearchBar()}
         {renderBanner()}

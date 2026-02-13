@@ -221,6 +221,57 @@ export async function getCategories(useCache = true) {
   return result;
 }
 
+// Real-time subscription for categories changes
+export function subscribeToCategories(onChange: (categories: any[]) => void) {
+  const channel = supabase
+    .channel('categories-changes')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'categories',
+      },
+      async () => {
+        // Clear cache and refetch
+        const cache = require('@/utils/cache');
+        cache.clearCache('categories');
+        const fresh = await getCategories(false);
+        onChange(fresh);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
+// Real-time subscription for products changes
+export function subscribeToProducts(onChange: () => void) {
+  const channel = supabase
+    .channel('products-changes')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'products',
+      },
+      () => {
+        // Clear cache and notify
+        const cache = require('@/utils/cache');
+        cache.clearCache();
+        onChange();
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
 export async function getSubCategories(parentId: string) {
   const { data, error } = await supabase
     .from('categories')

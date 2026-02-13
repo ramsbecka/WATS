@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Image, TextInput, Dimensions, ActivityIndicator, Modal, Animated } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Image, TextInput, Dimensions, ActivityIndicator, Modal, Animated, AppState, RefreshControl } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/components/ui/Screen';
-import { getCategories, getSubCategories } from '@/api/client';
+import { getCategories, getSubCategories, subscribeToCategories } from '@/api/client';
 import { colors, spacing, typography, radius } from '@/theme/tokens';
 import { useAuthStore } from '@/store/auth';
 import { supabase } from '@/lib/supabase';
@@ -20,6 +20,7 @@ export default function ProductsTab() {
   const [recommendedSubCategories, setRecommendedSubCategories] = useState<SubCategory[]>([]);
   const [hotSubCategories, setHotSubCategories] = useState<SubCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -30,6 +31,30 @@ export default function ProductsTab() {
   useEffect(() => {
     loadData();
     loadNotifications();
+
+    // Subscribe to real-time category changes
+    const unsubscribe = subscribeToCategories((categories) => {
+      setMainCategories(categories);
+      // Refresh sub-categories if a category is selected
+      if (selectedCategoryId) {
+        loadSubCategories(selectedCategoryId);
+      }
+    });
+
+    // Refresh data when app comes to foreground
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        loadData();
+        if (selectedCategoryId) {
+          loadSubCategories(selectedCategoryId);
+        }
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      subscription.remove();
+    };
   }, []);
 
   useEffect(() => {
@@ -54,8 +79,8 @@ export default function ProductsTab() {
     }
   }, [selectedCategoryId]);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (skipLoading = false) => {
+    if (!skipLoading) setLoading(true);
     try {
       const categories = await getCategories(false); // Disable cache to get fresh data
       setMainCategories(categories);
@@ -68,6 +93,17 @@ export default function ProductsTab() {
       console.error('Error loading categories:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData(true);
+    if (selectedCategoryId) {
+      await loadSubCategories(selectedCategoryId);
+    } else {
+      await loadRecommendedAndHot();
     }
   };
 

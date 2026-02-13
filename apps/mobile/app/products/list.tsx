@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Image, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Image, ActivityIndicator, Dimensions, AppState } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/components/ui/Screen';
-import { getProducts, getSubCategories } from '@/api/client';
+import { getProducts, getSubCategories, subscribeToProducts } from '@/api/client';
 import { useCartStore } from '@/store/cart';
 import { colors, spacing, typography, radius } from '@/theme/tokens';
 import { supabase } from '@/lib/supabase';
@@ -28,6 +28,26 @@ export default function ProductsList() {
     if (subCategoryId) {
       loadSubCategoryName();
     }
+
+    // Subscribe to real-time product changes
+    const unsubscribeProducts = subscribeToProducts(() => {
+      loadProducts(); // Reload products when they change
+    });
+
+    // Refresh data when app comes to foreground
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        loadProducts();
+        if (subCategoryId) {
+          loadSubCategoryName();
+        }
+      }
+    });
+
+    return () => {
+      unsubscribeProducts();
+      subscription.remove();
+    };
   }, [categoryId, subCategoryId, searchQuery]);
 
   const loadSubCategoryName = async () => {
