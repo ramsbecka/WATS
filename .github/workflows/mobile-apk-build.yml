@@ -1,0 +1,235 @@
+name: Build Mobile APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type (apk, aab, or both)'
+        required: true
+        default: 'apk'
+        type: choice
+        options:
+          - apk
+          - aab
+          - both
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - preview
+          - production
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.event.inputs.build_type, 'apk'))
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/mobile/package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 34
+          target: default
+          arch: x86_64
+
+      - name: Install dependencies
+        working-directory: apps/mobile
+        run: |
+          npm ci || npm install
+
+      - name: Setup Expo CLI
+        working-directory: apps/mobile
+        run: |
+          npm install -g eas-cli@latest
+          npm install -g @expo/cli@latest
+
+      - name: Configure Expo
+        working-directory: apps/mobile
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          echo "EXPO_PUBLIC_SUPABASE_URL=$EXPO_PUBLIC_SUPABASE_URL" > .env
+          echo "EXPO_PUBLIC_SUPABASE_ANON_KEY=$EXPO_PUBLIC_SUPABASE_ANON_KEY" >> .env
+
+      - name: Login to Expo (if token provided)
+        if: ${{ secrets.EXPO_TOKEN != '' }}
+        working-directory: apps/mobile
+        run: |
+          eas login --non-interactive --token ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build APK with EAS (if token provided)
+        if: ${{ secrets.EXPO_TOKEN != '' }}
+        working-directory: apps/mobile
+        env:
+          EAS_BUILD_PROFILE: ${{ github.event.inputs.release_type || 'development' }}
+        run: |
+          eas build --platform android --profile ${{ github.event.inputs.release_type || 'development' }} --non-interactive --no-wait
+
+      - name: Build APK locally (fallback)
+        if: ${{ secrets.EXPO_TOKEN == '' }}
+        working-directory: apps/mobile
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+          PATH: ${{ env.PATH }}
+        run: |
+          npx expo prebuild --platform android --clean
+          cd android
+          ./gradlew assembleRelease
+          cd ..
+
+      - name: Find APK file
+        id: find-apk
+        working-directory: apps/mobile
+        shell: bash
+        run: |
+          if [ -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
+            echo "apk_path=android/app/build/outputs/apk/release/app-release.apk" >> $GITHUB_OUTPUT
+            echo "apk_name=wats-mobile-$(date +%Y%m%d-%H%M%S).apk" >> $GITHUB_OUTPUT
+          elif [ -f "*.apk" ]; then
+            APK_FILE=$(find . -name "*.apk" -type f | head -1)
+            echo "apk_path=$APK_FILE" >> $GITHUB_OUTPUT
+            echo "apk_name=wats-mobile-$(date +%Y%m%d-%H%M%S).apk" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload APK artifact
+        if: steps.find-apk.outputs.apk_path != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: ${{ steps.find-apk.outputs.apk_path }}
+          retention-days: 30
+
+      - name: Create GitHub Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ steps.find-apk.outputs.apk_path }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-aab:
+    name: Build Android AAB
+    runs-on: ubuntu-latest
+    if: contains(github.event.inputs.build_type, 'aab') || contains(github.event.inputs.build_type, 'both')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/mobile/package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 34
+          target: default
+          arch: x86_64
+
+      - name: Install dependencies
+        working-directory: apps/mobile
+        run: |
+          npm ci || npm install
+
+      - name: Setup Expo CLI
+        working-directory: apps/mobile
+        run: |
+          npm install -g eas-cli@latest
+
+      - name: Configure Expo
+        working-directory: apps/mobile
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          echo "EXPO_PUBLIC_SUPABASE_URL=$EXPO_PUBLIC_SUPABASE_URL" > .env
+          echo "EXPO_PUBLIC_SUPABASE_ANON_KEY=$EXPO_PUBLIC_SUPABASE_ANON_KEY" >> .env
+
+      - name: Login to Expo
+        if: ${{ secrets.EXPO_TOKEN != '' }}
+        working-directory: apps/mobile
+        run: |
+          eas login --non-interactive --token ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build AAB with EAS
+        if: ${{ secrets.EXPO_TOKEN != '' }}
+        working-directory: apps/mobile
+        env:
+          EAS_BUILD_PROFILE: ${{ github.event.inputs.release_type || 'production' }}
+        run: |
+          eas build --platform android --profile ${{ github.event.inputs.release_type || 'production' }} --non-interactive --no-wait
+
+      - name: Build AAB locally (fallback)
+        if: ${{ secrets.EXPO_TOKEN == '' }}
+        working-directory: apps/mobile
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+          PATH: ${{ env.PATH }}
+        run: |
+          npx expo prebuild --platform android --clean
+          cd android
+          ./gradlew bundleRelease
+          cd ..
+
+      - name: Find AAB file
+        id: find-aab
+        working-directory: apps/mobile
+        shell: bash
+        run: |
+          if [ -f "android/app/build/outputs/bundle/release/app-release.aab" ]; then
+            echo "aab_path=android/app/build/outputs/bundle/release/app-release.aab" >> $GITHUB_OUTPUT
+            echo "aab_name=wats-mobile-$(date +%Y%m%d-%H%M%S).aab" >> $GITHUB_OUTPUT
+          elif [ -f "*.aab" ]; then
+            AAB_FILE=$(find . -name "*.aab" -type f | head -1)
+            echo "aab_path=$AAB_FILE" >> $GITHUB_OUTPUT
+            echo "aab_name=wats-mobile-$(date +%Y%m%d-%H%M%S).aab" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload AAB artifact
+        if: steps.find-aab.outputs.aab_path != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-aab
+          path: ${{ steps.find-aab.outputs.aab_path }}
+          retention-days: 30
