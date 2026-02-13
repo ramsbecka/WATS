@@ -50,7 +50,7 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
         <div className="mb-6 flex items-center gap-3">
-          <Image src="/logo.png" alt="WATS" width={48} height={48} className="shrink-0 rounded-xl" />
+          <Image src="/logo.jpeg" alt="WATS" width={48} height={48} className="shrink-0 rounded-xl" />
           <div>
             <h1 className="text-xl font-semibold text-slate-900">WATS</h1>
             <p className="text-sm text-slate-500">Admin dashboard</p>

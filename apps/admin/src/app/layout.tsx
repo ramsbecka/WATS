@@ -5,7 +5,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'WATS Admin',
   description: 'WATS Admin Dashboard',
-  icons: { icon: '/logo.png', apple: '/logo.png' },
+  icons: { icon: '/logo.jpeg', apple: '/logo.jpeg' },
 };
 
 export default function RootLayout({

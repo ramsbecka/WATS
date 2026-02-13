@@ -53,7 +53,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen bg-slate-50">
       <aside className="flex w-64 flex-col border-r border-slate-200 bg-white shadow-sm">
         <Link href="/" className="flex h-16 items-center gap-3 border-b border-slate-200 px-5">
-          <Image src="/logo.png" alt="WATS" width={36} height={36} className="shrink-0 rounded-lg" />
+          <Image src="/logo.jpeg" alt="WATS" width={36} height={36} className="shrink-0 rounded-lg" />
           <div>
             <span className="font-semibold text-slate-900">WATS</span>
             <span className="block text-xs text-slate-500">Admin</span>
