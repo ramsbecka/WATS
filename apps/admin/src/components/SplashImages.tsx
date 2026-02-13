@@ -9,9 +9,7 @@ const SPLASH_PREFIX = 'splash';
 type SplashImage = {
   id?: string;
   image_url: string;
-  title_sw: string;
   title_en: string;
-  description_sw: string;
   description_en: string;
   sort_order: number;
   is_active: boolean;
@@ -24,9 +22,7 @@ export default function SplashImages() {
   const [uploading, setUploading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newImage, setNewImage] = useState<Partial<SplashImage>>({
-    title_sw: '',
     title_en: '',
-    description_sw: '',
     description_en: '',
     sort_order: 0,
     is_active: true,
@@ -77,9 +73,7 @@ export default function SplashImages() {
       const maxOrder = images.length > 0 ? Math.max(...images.map((i) => i.sort_order)) : -1;
       const { error } = await supabase.from('splash_images').insert({
         image_url: imageUrl,
-        title_sw: newImage.title_sw || null,
         title_en: newImage.title_en || null,
-        description_sw: newImage.description_sw || null,
         description_en: newImage.description_en || null,
         sort_order: maxOrder + 1,
         is_active: newImage.is_active ?? true,
@@ -87,9 +81,7 @@ export default function SplashImages() {
       if (error) throw error;
       setShowAddForm(false);
       setNewImage({
-        title_sw: '',
         title_en: '',
-        description_sw: '',
         description_en: '',
         sort_order: 0,
         is_active: true,
@@ -137,9 +129,7 @@ export default function SplashImages() {
     const { error } = await supabase
       .from('splash_images')
       .update({
-        title_sw: img.title_sw || null,
         title_en: img.title_en || null,
-        description_sw: img.description_sw || null,
         description_en: img.description_en || null,
         is_active: img.is_active,
       })
@@ -212,17 +202,7 @@ export default function SplashImages() {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Title (Swahili)</label>
-              <input
-                type="text"
-                value={newImage.title_sw || ''}
-                onChange={(e) => setNewImage((prev) => ({ ...prev, title_sw: e.target.value }))}
-                placeholder="Kichwa cha habari"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Title (English)</label>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Title</label>
               <input
                 type="text"
                 value={newImage.title_en || ''}
@@ -232,19 +212,7 @@ export default function SplashImages() {
               />
             </div>
             <div>
-              <label htmlFor="splash-description-sw" className="mb-1.5 block text-sm font-medium text-slate-700">Description (Swahili)</label>
-              <textarea
-                id="splash-description-sw"
-                value={newImage.description_sw || ''}
-                onChange={(e) => setNewImage((prev) => ({ ...prev, description_sw: e.target.value }))}
-                placeholder="Maelezo ya kina..."
-                rows={3}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                aria-label="Splash image description in Swahili"
-              />
-            </div>
-            <div>
-              <label htmlFor="splash-description-en" className="mb-1.5 block text-sm font-medium text-slate-700">Description (English)</label>
+              <label htmlFor="splash-description-en" className="mb-1.5 block text-sm font-medium text-slate-700">Description</label>
               <textarea
                 id="splash-description-en"
                 value={newImage.description_en || ''}
@@ -289,7 +257,7 @@ export default function SplashImages() {
         {images.map((img, index) => (
           <div key={img.id} className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             <div className="relative aspect-[9/16] bg-slate-100">
-              <img src={img.image_url} alt={img.title_sw || img.title_en || 'Splash'} className="h-full w-full object-cover" />
+              <img src={img.image_url} alt={img.title_en || 'Splash'} className="h-full w-full object-cover" />
               <div className="absolute top-2 right-2">
                 <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${img.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
                   {img.is_active ? 'Active' : 'Inactive'}
@@ -320,13 +288,13 @@ export default function SplashImages() {
               </div>
               <input
                 type="text"
-                value={img.title_sw || ''}
+                value={img.title_en || ''}
                 onChange={(e) => {
-                  const updated = { ...img, title_sw: e.target.value };
+                  const updated = { ...img, title_en: e.target.value };
                   setImages((prev) => prev.map((i) => (i.id === img.id ? updated : i)));
                 }}
                 onBlur={() => handleUpdate(img)}
-                placeholder="Title (Swahili)"
+                placeholder="Title"
                 className="mb-2 w-full rounded border border-slate-300 px-2 py-1 text-sm"
                 aria-label="Edit title in Swahili"
                 title="Edit title in Swahili"

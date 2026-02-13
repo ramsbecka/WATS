@@ -134,7 +134,7 @@ export default function Vouchers() {
               </View>
               {voucher.products && (
                 <Text style={styles.productName} numberOfLines={1}>
-                  For: {voucher.products.name_sw || voucher.products.name_en || 'Any Product'}
+                  For: {voucher.products.name_en || 'Any Product'}
                 </Text>
               )}
               {voucher.min_order_amount_tzs > 0 && (

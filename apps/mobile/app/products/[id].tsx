@@ -62,7 +62,7 @@ export default function ProductDetail() {
   // Track product view with analytics
   useEffect(() => {
     if (product) {
-      trackProductView(product.id, product.name_sw || product.name_en || 'Product');
+      trackProductView(product.id, product.name_en || 'Product');
     }
   }, [product?.id]);
 
@@ -87,7 +87,7 @@ export default function ProductDetail() {
     if (!variant?.product_variant_values || variant.product_variant_values.length === 0) return 'Default';
     const values = variant.product_variant_values.map((vv: any) => {
       const opt = vv.product_variant_options;
-      return opt?.value_sw || opt?.value_en || '';
+      return opt?.value_en || '';
     });
     return values.join(' / ');
   };
@@ -136,14 +136,14 @@ export default function ProductDetail() {
       return {
         attribute: data.attribute,
         options: options.sort((a: any, b: any) => {
-          const aVal = a?.value_sw || a?.value_en || '';
-          const bVal = b?.value_sw || b?.value_en || '';
+          const aVal = a?.value_en || '';
+          const bVal = b?.value_en || '';
           return aVal.localeCompare(bVal);
         }),
       };
     }).sort((a, b) => {
-      const aName = a.attribute.name_sw || a.attribute.name_en || '';
-      const bName = b.attribute.name_sw || b.attribute.name_en || '';
+      const aName = a.attribute.name_en || '';
+      const bName = b.attribute.name_en || '';
       return aName.localeCompare(bName);
     });
   };
@@ -253,7 +253,7 @@ export default function ProductDetail() {
         const allAttributes = getAttributesWithOptions();
         const missingAttributes = allAttributes.filter((attr) => !selectedOptions[attr.attribute.id]);
         if (missingAttributes.length > 0) {
-          const missingNames = missingAttributes.map((attr) => attr.attribute.name_sw || attr.attribute.name_en).join(', ');
+          const missingNames = missingAttributes.map((attr) => attr.attribute.name_en || '').join(', ');
           Alert.alert('Chagua variant', `Tafadhali chagua: ${missingNames}`);
           return;
         }
@@ -273,14 +273,13 @@ export default function ProductDetail() {
               variant_id: variant.id,
               quantity: qty,
               product: {
-                name_sw: product.name_sw,
                 name_en: product.name_en,
                 price_tzs: price,
                 product_images: product.product_images,
               },
             });
             // Track analytics
-            trackAddToCart(product.id, product.name_sw || product.name_en || 'Product', Number(price) * qty);
+            trackAddToCart(product.id, product.name_en || 'Product', Number(price) * qty);
             router.push('/(tabs)/cart');
           } catch (e: any) {
             Alert.alert('Add to cart failed', e?.message ?? 'Could not add to cart. Try again.');
@@ -313,14 +312,13 @@ export default function ProductDetail() {
         variant_id: selectedVariant || undefined,
         quantity: qty,
         product: {
-          name_sw: product.name_sw,
           name_en: product.name_en,
           price_tzs: price,
           product_images: product.product_images,
         },
       });
       // Track analytics
-      trackAddToCart(product.id, product.name_sw || product.name_en || 'Product', Number(price) * qty);
+      trackAddToCart(product.id, product.name_en || 'Product', Number(price) * qty);
       router.push('/(tabs)/cart');
     } catch (e: any) {
       Alert.alert('Add to cart failed', e?.message ?? 'Could not add to cart. Try again.');
@@ -362,7 +360,7 @@ export default function ProductDetail() {
     : productImages;
   
   const img = displayImages[selectedImageIndex]?.url || displayImages[0]?.url;
-  const name = product?.name_sw ?? product?.name_en ?? '';
+  const name = product?.name_en ?? '';
   const displayPrice = selectedVariantData ? selectedVariantData.price_tzs : product?.price_tzs || 0;
 
   return (
@@ -445,8 +443,8 @@ export default function ProductDetail() {
               <Text style={styles.comparePrice}>Was TZS {Number(product.compare_at_price_tzs).toLocaleString()}</Text>
             )}
           </View>
-          {(product.description_sw || product.description_en) && (
-            <Text style={styles.desc}>{product.description_sw ?? product.description_en}</Text>
+          {product.description_en && (
+            <Text style={styles.desc}>{product.description_en}</Text>
           )}
           {variants.length > 0 && (
             <Card style={styles.variantCard}>
@@ -456,7 +454,7 @@ export default function ProductDetail() {
                 return (
                   <View key={attribute.id} style={styles.attributeSection}>
                     <Text style={styles.attributeName}>
-                      {attribute.name_sw || attribute.name_en}
+                      {attribute.name_en}
                     </Text>
                     <View style={styles.attributeOptions}>
                       {options.map((option: any) => {
@@ -482,7 +480,7 @@ export default function ProductDetail() {
                               isSelected && styles.optionBtnTextSelected,
                               !isAvailable && styles.optionBtnTextDisabled,
                             ]}>
-                              {option.value_sw || option.value_en}
+                              {option.value_en}
                             </Text>
                           </Pressable>
                         );
@@ -653,8 +651,8 @@ export default function ProductDetail() {
             <Text style={styles.featuresTitle}>Maelezo ya Bidhaa</Text>
             <View style={styles.featuresList}>
               {product.product_features.map((feature: any, idx: number) => {
-                const title = feature.title_sw || feature.title_en || '';
-                const description = feature.description_sw || feature.description_en || '';
+                const title = feature.title_en || '';
+                const description = feature.description_en || '';
                 return (
                   <View key={feature.id || idx} style={styles.featureItem}>
                     {title ? <Text style={styles.featureTitle}>{title}</Text> : null}

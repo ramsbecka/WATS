@@ -37,7 +37,7 @@ export async function getOrder(orderId: string) {
     .from('orders')
     .select(`
       *,
-      order_items(*, products(name_sw, name_en, product_images(url))),
+      order_items(*, products(name_en, product_images(url))),
       shipments(id, status, tracking_number, carrier, created_at)
     `)
     .eq('id', orderId)
@@ -89,7 +89,7 @@ export async function getVouchers(userId: string) {
       id, code, discount_percentage, discount_amount_tzs, min_order_amount_tzs,
       max_discount_amount_tzs, is_used, used_at, usage_count, max_usage,
       valid_from, valid_until, created_at,
-      products(id, name_sw, name_en, product_images(url)),
+      products(id, name_en, product_images(url)),
       orders(id, order_number)
     `)
     .eq('user_id', userId)
@@ -105,7 +105,7 @@ export async function getAvailableVouchers(userId: string) {
       id, code, discount_percentage, discount_amount_tzs, min_order_amount_tzs,
       max_discount_amount_tzs, is_used, usage_count, max_usage,
       valid_from, valid_until,
-      products(id, name_sw, name_en, product_images(url))
+      products(id, name_en, product_images(url))
     `)
     .eq('user_id', userId)
     .eq('is_used', false)
@@ -133,36 +133,61 @@ export async function verifyVoucherCode(code: string) {
 export async function getProducts(opts?: { categoryId?: string; search?: string; limit?: number; offset?: number }) {
   let q = supabase
     .from('products')
-    .select('id, name_sw, name_en, price_tzs, compare_at_price_tzs, product_images!inner(url)', { count: 'exact' })
+    .select(`
+      id, name_en, price_tzs, compare_at_price_tzs, 
+      product_images(url),
+      product_reviews(rating)
+    `, { count: 'exact' })
     .eq('is_active', true)
     .order('created_at', { ascending: false });
   if (opts?.categoryId) q = q.eq('category_id', opts.categoryId);
-  if (opts?.search) q = q.or(`name_sw.ilike.%${opts.search}%,name_en.ilike.%${opts.search}%`);
+  if (opts?.search) q = q.ilike('name_en', `%${opts.search}%`);
   const limit = opts?.limit ?? 20;
   const offset = opts?.offset ?? 0;
   const { data, error, count } = await q.range(offset, offset + limit - 1);
   if (error) throw error;
-  return { data: data ?? [], count: count ?? 0 };
+  
+  // Calculate average rating and order count for each product
+  const productsWithStats = (data ?? []).map((product: any) => {
+    const reviews = product.product_reviews || [];
+    const ratings = reviews.map((r: any) => r.rating).filter(Boolean);
+    const average_rating = ratings.length > 0 
+      ? ratings.reduce((sum: number, r: number) => sum + r, 0) / ratings.length 
+      : 0;
+    
+    // Get order count from order_items
+    // Note: This is a simplified version - in production you might want to fetch this separately
+    const order_count = 0; // Will be fetched separately if needed
+    
+    return {
+      ...product,
+      average_rating: Math.round(average_rating * 10) / 10, // Round to 1 decimal
+      total_reviews: ratings.length,
+      order_count,
+    };
+  });
+  
+  return { data: productsWithStats, count: count ?? 0 };
 }
 
 export async function getProduct(id: string) {
   const { data, error } = await supabase
     .from('products')
     .select(`
-      id, sku, name_sw, name_en, description_sw, description_en, price_tzs, compare_at_price_tzs,
+      id, sku, name_en, description_en, price_tzs, compare_at_price_tzs,
       product_images(id, url, sort_order),
       product_variants(
         id, sku, price_tzs, compare_at_price_tzs, quantity, is_active,
         product_variant_values(
           option_id,
           product_variant_options(
-            id, value_sw, value_en,
-            product_variant_attributes(id, name_sw, name_en)
+            id, value_en,
+            product_variant_attributes(id, name_en)
           )
         ),
         variant_images(id, url, sort_order)
       ),
-      product_features(id, title_sw, title_en, description_sw, description_en, media_type, media_url, sort_order)
+      product_features(id, title_en, description_en, media_type, media_url, sort_order)
     `)
     .eq('id', id)
     .eq('is_active', true)
@@ -174,13 +199,14 @@ export async function getProduct(id: string) {
 export async function getCategories(useCache = true) {
   if (useCache) {
     const cache = require('@/utils/cache');
-    const cached = cache.getCached<any[]>('categories');
+    const { Category } = require('@/types');
+    const cached = cache.getCached<Category[]>('categories');
     if (cached) return cached;
   }
   
   const { data, error } = await supabase
     .from('categories')
-    .select('id, name_sw, name_en, slug, image_url')
+    .select('id, name_en, slug, image_url')
     .eq('is_active', true)
     .is('parent_id', null)
     .order('sort_order');
@@ -193,6 +219,17 @@ export async function getCategories(useCache = true) {
   }
   
   return result;
+}
+
+export async function getSubCategories(parentId: string) {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('id, name_en, slug, image_url, parent_id')
+    .eq('is_active', true)
+    .eq('parent_id', parentId)
+    .order('sort_order');
+  if (error) throw error;
+  return data ?? [];
 }
 
 // Cart: ensure cart exists, then add/update/remove items
@@ -209,7 +246,7 @@ export async function getCartItems(cartId: string) {
     .from('cart_items')
     .select(`
       id, product_id, quantity, variant_id,
-      products(id, name_sw, name_en, price_tzs, product_images(url)),
+      products(id, name_en, price_tzs, product_images(url)),
       product_variants(id, price_tzs, sku)
     `)
     .eq('cart_id', cartId);
@@ -271,7 +308,7 @@ export async function getWishlist(userId: string) {
     .from('wishlist')
     .select(`
       id, product_id, created_at,
-      products(id, name_sw, name_en, price_tzs, product_images(url))
+      products(id, name_en, price_tzs, product_images(url))
     `)
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
@@ -596,7 +633,7 @@ export async function getRecentlyViewed(userId: string, limit = 20) {
     .select(`
       id, viewed_at,
       products(
-        id, name_sw, name_en, price_tzs,
+        id, name_en, price_tzs,
         product_images!inner(url)
       )
     `)

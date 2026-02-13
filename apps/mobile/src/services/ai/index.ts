@@ -72,7 +72,7 @@ export async function getProductRecommendations(
     // Get similar products from same categories
     let query = supabase
       .from('products')
-      .select('id, category_id, name_sw, name_en')
+      .select('id, category_id, name_en')
       .eq('is_active', true)
       .limit(options?.limit || 10);
     

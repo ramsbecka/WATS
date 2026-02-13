@@ -8,24 +8,62 @@ import { supabase } from '@/lib/supabase';
 export default function Products() {
   const router = useRouter();
   const [products, setProducts] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [mainCategories, setMainCategories] = useState<any[]>([]);
+  const [subCategories, setSubCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [categoryId, setCategoryId] = useState<string>('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string>('');
   const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.from('categories').select('id, name_sw, name_en').eq('is_active', true).order('sort_order').then(({ data }) => setCategories(data ?? []));
+    // Load main categories (parent_id is null)
+    supabase
+      .from('categories')
+      .select('id, name_en')
+      .eq('is_active', true)
+      .is('parent_id', null)
+      .order('sort_order')
+      .then(({ data }) => setMainCategories(data ?? []));
   }, []);
+
+  useEffect(() => {
+    // Load sub-categories when a main category is selected
+    if (selectedCategoryId) {
+      supabase
+        .from('categories')
+        .select('id, name_en')
+        .eq('is_active', true)
+        .eq('parent_id', selectedCategoryId)
+        .order('sort_order')
+        .then(({ data }) => {
+          setSubCategories(data ?? []);
+          // Reset sub-category selection when category changes
+          setSelectedSubCategoryId('');
+        });
+    } else {
+      setSubCategories([]);
+      setSelectedSubCategoryId('');
+    }
+  }, [selectedCategoryId]);
 
   const loadProducts = () => {
     setLoading(true);
     let q = supabase
       .from('products')
-      .select('id, name_sw, name_en, sku, price_tzs, is_active, category_id, created_at')
+      .select('id, name_en, sku, price_tzs, is_active, category_id, created_at')
       .order('created_at', { ascending: false });
-    if (categoryId) q = q.eq('category_id', categoryId);
-    if (search.trim()) q = q.or(`name_sw.ilike.%${search.trim()}%,name_en.ilike.%${search.trim()}%,sku.ilike.%${search.trim()}%`);
+    
+    // Filter by sub-category if selected, otherwise by main category
+    const filterCategoryId = selectedSubCategoryId || selectedCategoryId;
+    if (filterCategoryId) {
+      q = q.eq('category_id', filterCategoryId);
+    }
+    
+    if (search.trim()) {
+      q = q.or(`name_en.ilike.%${search.trim()}%,sku.ilike.%${search.trim()}%`);
+    }
+    
     q.then(({ data, error }) => {
       if (!error) setProducts(data ?? []);
       setLoading(false);
@@ -35,7 +73,7 @@ export default function Products() {
   useEffect(() => {
     loadProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryId, search]);
+  }, [selectedCategoryId, selectedSubCategoryId, search]);
 
   const handleDelete = async (productId: string, productName: string) => {
     if (!confirm(`Je, una uhakika unataka kufuta bidhaa "${productName}"?\n\nHii itaondoa bidhaa kabisa na hauwezi kuirejesha.`)) {
@@ -81,15 +119,29 @@ export default function Products() {
         />
         <select
           aria-label="Filter by category"
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
+          value={selectedCategoryId}
+          onChange={(e) => setSelectedCategoryId(e.target.value)}
           className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
         >
           <option value="">All categories</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>{c.name_sw ?? c.name_en}</option>
+          {mainCategories.map((c) => (
+            <option key={c.id} value={c.id}>{c.name_en}</option>
           ))}
         </select>
+        {selectedCategoryId && (
+          <select
+            aria-label="Filter by sub-category (kundi)"
+            value={selectedSubCategoryId}
+            onChange={(e) => setSelectedSubCategoryId(e.target.value)}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+            disabled={subCategories.length === 0}
+          >
+            <option value="">{subCategories.length > 0 ? 'All sub-categories' : 'No sub-categories'}</option>
+            {subCategories.map((sc) => (
+              <option key={sc.id} value={sc.id}>{sc.name_en}</option>
+            ))}
+          </select>
+        )}
       </div>
       <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         {loading ? (
@@ -111,7 +163,7 @@ export default function Products() {
             <tbody className="divide-y divide-slate-200 bg-white">
               {products.map((p) => (
                 <tr key={p.id}>
-                  <td className="px-5 py-3.5 text-sm font-medium text-slate-900">{p.name_sw ?? p.name_en ?? p.id}</td>
+                  <td className="px-5 py-3.5 text-sm font-medium text-slate-900">{p.name_en ?? p.id}</td>
                   <td className="px-5 py-3.5 text-sm text-slate-500">{p.sku ?? '–'}</td>
                   <td className="px-5 py-3.5 text-sm text-slate-900">{Number(p.price_tzs).toLocaleString()}</td>
                   <td className="px-5 py-3.5">
@@ -125,7 +177,7 @@ export default function Products() {
                         Edit →
                       </Link>
                       <button
-                        onClick={() => handleDelete(p.id, p.name_sw || p.name_en || 'Product')}
+                        onClick={() => handleDelete(p.id, p.name_en || 'Product')}
                         disabled={deleting === p.id}
                         className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1"
                         aria-label="Delete product"

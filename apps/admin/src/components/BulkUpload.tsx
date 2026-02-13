@@ -68,8 +68,8 @@ export default function BulkUpload() {
   };
 
   const example = `[
-  { "name_sw": "Product 1", "name_en": "Product 1", "price_tzs": 15000, "sku": "SKU-001" },
-  { "name_sw": "Product 2", "price_tzs": 25000, "category_id": "uuid-optional", "images": ["https://..."] }
+  { "name_en": "Product 1", "price_tzs": 15000, "sku": "SKU-001" },
+  { "name_en": "Product 2", "price_tzs": 25000, "category_id": "uuid-optional", "images": ["https://..."] }
 ]`;
 
   return (

@@ -1,0 +1,13 @@
+node_modules/
+.expo/
+.expo-shared/
+dist/
+*.log
+.env.local
+.DS_Store
+*.pem
+__tests__/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx

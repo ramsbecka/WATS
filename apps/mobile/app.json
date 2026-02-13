@@ -7,10 +7,35 @@
     "icon": "./assets/icon.png",
     "scheme": "wats",
     "userInterfaceStyle": "automatic",
-    "splash": { "image": "./assets/splash.png", "resizeMode": "contain", "backgroundColor": "#0078D4" },
-    "assetBundlePatterns": ["**/*"],
-    "ios": { "supportsTablet": true, "bundleIdentifier": "co.tz.wats.app" },
-    "android": { "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#0078D4" }, "package": "co.tz.wats.app" },
-    "plugins": ["expo-router", "expo-secure-store"]
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0078D4"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "co.tz.wats.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0078D4"
+      },
+      "package": "co.tz.wats.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "cbd61f57-0c51-4355-9d4b-6043c1b92fc0"
+      }
+    },
+    "owner": "ramsbecka"
   }
 }

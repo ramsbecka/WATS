@@ -5,7 +5,7 @@ export type CartItem = {
   product_id: string;
   variant_id?: string;
   quantity: number;
-  product?: { name_sw?: string; name_en?: string; price_tzs: number; product_images?: { url: string }[] };
+  product?: { name_en?: string; price_tzs: number; product_images?: { url: string }[] };
 };
 
 type CartStore = {

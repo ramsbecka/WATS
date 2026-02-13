@@ -1,203 +1,684 @@
-import { useEffect, useState } from 'react';
-import { View, Text, FlatList, Pressable, Image, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, Pressable, ScrollView, Image, TextInput, Dimensions, ActivityIndicator, Modal, Animated } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/components/ui/Screen';
-import { Card } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
-import { getProducts, getCategories } from '@/api/client';
+import { getCategories, getSubCategories } from '@/api/client';
 import { colors, spacing, typography, radius } from '@/theme/tokens';
-import ProductRecommendations from '@/components/ai/ProductRecommendations';
-import { trackEvent } from '@/services/ai';
+import { useAuthStore } from '@/store/auth';
+import { supabase } from '@/lib/supabase';
+import type { Category, SubCategory } from '@/types';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ProductsTab() {
   const router = useRouter();
-  const [products, setProducts] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
+  const params = useLocalSearchParams();
+  const { user } = useAuthStore();
+  const [mainCategories, setMainCategories] = useState<Category[]>([]);
+  const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
+  const [recommendedSubCategories, setRecommendedSubCategories] = useState<SubCategory[]>([]);
+  const [hotSubCategories, setHotSubCategories] = useState<SubCategory[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [showCategoryMenu, setShowCategoryMenu] = useState(false);
+  const slideAnim = useRef(new Animated.Value(-SCREEN_WIDTH * 0.8)).current;
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
 
-  const load = async (showLoading = true) => {
-    if (showLoading) setLoading(true);
-    setError(null);
-    try {
-      // Load categories once (they're cached)
-      if (categories.length === 0) {
-        const cats = await getCategories(true);
-        setCategories(cats);
+  useEffect(() => {
+    loadData();
+    loadNotifications();
+  }, []);
+
+  useEffect(() => {
+    if (params.category) {
+      const categoryId = params.category as string;
+      // Check if it's a main category or sub-category
+      const isMainCategory = mainCategories.some(c => c.id === categoryId);
+      if (isMainCategory) {
+        setSelectedCategoryId(categoryId);
+      } else {
+        // It's a sub-category, navigate to products list
+        router.push(`/products/list?subCategory=${categoryId}`);
       }
+    }
+  }, [params.category, mainCategories]);
+
+  useEffect(() => {
+    if (selectedCategoryId) {
+      loadSubCategories(selectedCategoryId);
+    } else {
+      loadRecommendedAndHot();
+    }
+  }, [selectedCategoryId]);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const categories = await getCategories(false); // Disable cache to get fresh data
+      setMainCategories(categories);
       
-      // Load products
-      const prods = await getProducts({ categoryId: categoryId ?? undefined, search: search || undefined, limit: 50 });
-      setProducts(prods.data);
-    } catch (e: any) {
-      setError(e?.message ?? 'Failed to load products.');
+      // Set first category as selected if none selected
+      if (!selectedCategoryId && categories.length > 0) {
+        setSelectedCategoryId(categories[0].id);
+      }
+    } catch (error) {
+      console.error('Error loading categories:', error);
     } finally {
-      if (showLoading) setLoading(false);
+      setLoading(false);
     }
   };
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    load(false).finally(() => setRefreshing(false));
+  const loadSubCategories = async (parentId: string) => {
+    try {
+      const subs = await getSubCategories(parentId);
+      setSubCategories(subs);
+    } catch (error) {
+      console.error('Error loading sub-categories:', error);
+      setSubCategories([]);
+    }
   };
 
-  // Load categories on mount only
-  useEffect(() => {
-    getCategories(true).then(setCategories).catch(() => {
-      // Silently handle errors
-    });
-  }, []);
-
-  useEffect(() => { load(); }, [categoryId]);
-  
-  // Debounce search
-  useEffect(() => {
-    const t = setTimeout(() => {
-      if (search.trim() || categoryId) {
-        load();
+  const loadRecommendedAndHot = async () => {
+    try {
+      // Get all sub-categories and split into recommended and hot
+      // For now, we'll get sub-categories from first few main categories
+      const allSubs: SubCategory[] = [];
+      for (const cat of mainCategories.slice(0, 3)) {
+        const subs = await getSubCategories(cat.id);
+        allSubs.push(...subs);
       }
-    }, 500);
-    return () => clearTimeout(t);
-  }, [search]);
+      
+      // Split into recommended and hot (first half recommended, second half hot)
+      const mid = Math.floor(allSubs.length / 2);
+      setRecommendedSubCategories(allSubs.slice(0, mid));
+      setHotSubCategories(allSubs.slice(mid));
+    } catch (error) {
+      console.error('Error loading recommended/hot:', error);
+    }
+  };
 
-  const renderHeader = () => (
-    <View style={styles.header}>
-      <Text style={styles.title}>Products</Text>
-      <Text style={styles.subtitle}>Choose what you need</Text>
-      <Input
-        placeholder="Search products..."
-        value={search}
-        onChangeText={setSearch}
-        style={styles.search}
-      />
-      <FlatList
-        horizontal
-        data={[{ id: null, name_sw: 'All' }, ...categories]}
-        keyExtractor={(c) => c.id ?? 'all'}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chips}
-        scrollEnabled={true}
-        nestedScrollEnabled={true}
-        renderItem={({ item }) => (
-          <Pressable
-            style={[styles.chip, categoryId === item.id && styles.chipActive]}
-            onPress={() => setCategoryId(item.id)}
+  const loadNotifications = async () => {
+    if (!user?.id) return;
+    try {
+      const { count } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .is('read_at', null);
+      setUnreadNotifications(count || 0);
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+    }
+  };
+
+  const handleSubCategoryPress = (subCategoryId: string) => {
+    // Navigate to products list page
+    router.push(`/products/list?subCategory=${subCategoryId}${selectedCategoryId ? `&category=${selectedCategoryId}` : ''}`);
+  };
+
+  useEffect(() => {
+    if (showCategoryMenu) {
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(overlayOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: -SCREEN_WIDTH * 0.8,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(overlayOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [showCategoryMenu]);
+
+
+  const handleSearchPress = () => {
+    if (searchQuery.trim()) {
+      router.push(`/(tabs)/products?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const renderSearchHeader = () => {
+    return (
+      <View style={styles.searchHeader}>
+        <Pressable style={styles.menuButton} onPress={() => setShowCategoryMenu(true)}>
+          <Ionicons name="menu" size={24} color={colors.textPrimary} />
+        </Pressable>
+        <View style={styles.searchBar}>
+          <Ionicons name="search-outline" size={20} color={colors.textMuted} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search products..."
+            placeholderTextColor={colors.textMuted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearchPress}
+            returnKeyType="search"
+          />
+        </View>
+        <Pressable style={styles.notificationIcon} onPress={() => router.push('/notifications')}>
+          <Ionicons name="chatbubble-outline" size={24} color={colors.textPrimary} />
+          {unreadNotifications > 0 && (
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationBadgeText}>{unreadNotifications > 9 ? '9+' : unreadNotifications}</Text>
+            </View>
+          )}
+        </Pressable>
+      </View>
+    );
+  };
+
+  const renderCategoryMenu = () => {
+    if (!showCategoryMenu) return null;
+
+    return (
+      <Modal
+        visible={showCategoryMenu}
+        transparent={true}
+        animationType="none"
+        onRequestClose={() => setShowCategoryMenu(false)}
+      >
+        <Pressable 
+          style={styles.menuOverlay}
+          onPress={() => setShowCategoryMenu(false)}
+        >
+          <Animated.View 
+            style={[
+              styles.menuOverlayAnimated,
+              { opacity: overlayOpacity }
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.menuContainer,
+              {
+                transform: [{ translateX: slideAnim }]
+              }
+            ]}
           >
-            <Text style={[styles.chipText, categoryId === item.id && styles.chipTextActive]}>
-              {item.name_sw ?? item.name_en ?? 'All'}
-            </Text>
-          </Pressable>
-        )}
-      />
-      {!categoryId && !search && (
-        <ProductRecommendations categoryId={undefined} limit={10} />
-      )}
-    </View>
-  );
+            <View style={styles.menuHeader}>
+              <Text style={styles.menuTitle}>Categories</Text>
+              <Pressable onPress={() => setShowCategoryMenu(false)}>
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
+              </Pressable>
+            </View>
+            <ScrollView style={styles.menuContent} showsVerticalScrollIndicator={false}>
+              {/* All Categories Option */}
+              <Pressable
+                style={[
+                  styles.menuItem,
+                  selectedCategoryId === null && styles.menuItemActive
+                ]}
+                onPress={() => {
+                  setSelectedCategoryId(null);
+                  setShowCategoryMenu(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.menuItemText,
+                    selectedCategoryId === null && styles.menuItemTextActive
+                  ]}
+                >
+                  All
+                </Text>
+                {selectedCategoryId === null && (
+                  <Ionicons name="checkmark" size={20} color={colors.primary} />
+                )}
+              </Pressable>
+              {mainCategories.map((category) => (
+                <Pressable
+                  key={category.id}
+                  style={[
+                    styles.menuItem,
+                    selectedCategoryId === category.id && styles.menuItemActive
+                  ]}
+                  onPress={() => {
+                    setSelectedCategoryId(category.id);
+                    setShowCategoryMenu(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.menuItemText,
+                      selectedCategoryId === category.id && styles.menuItemTextActive
+                    ]}
+                  >
+                    {category.name_en ?? 'Category'}
+                  </Text>
+                  {selectedCategoryId === category.id && (
+                    <Ionicons name="checkmark" size={20} color={colors.primary} />
+                  )}
+                </Pressable>
+              ))}
+            </ScrollView>
+          </Animated.View>
+        </Pressable>
+      </Modal>
+    );
+  };
 
-  return (
-    <Screen edges={['top']}>
-      {loading ? (
+  const renderCategoryCard = (category: Category) => {
+    const displayName = category.name_en ?? 'Category';
+    
+    return (
+      <Pressable
+        key={category.id}
+        style={styles.categoryCard}
+        onPress={() => {
+          setSelectedCategoryId(category.id);
+          setShowCategoryMenu(false);
+        }}
+      >
+        {category.image_url ? (
+          <Image source={{ uri: category.image_url }} style={styles.categoryImage} />
+        ) : (
+          <View style={[styles.categoryImage, styles.categoryImagePlaceholder]}>
+            <Ionicons name="image-outline" size={32} color={colors.textMuted} />
+          </View>
+        )}
+        <Text style={styles.categoryName} numberOfLines={2}>
+          {displayName}
+        </Text>
+      </Pressable>
+    );
+  };
+
+  const renderSubCategoryCard = (subCategory: SubCategory) => {
+    const displayName = subCategory.name_en ?? 'Sub-category';
+    
+    return (
+      <Pressable
+        key={subCategory.id}
+        style={styles.subCategoryCard}
+        onPress={() => handleSubCategoryPress(subCategory.id)}
+      >
+        {subCategory.image_url ? (
+          <Image source={{ uri: subCategory.image_url }} style={styles.subCategoryImage} />
+        ) : (
+          <View style={[styles.subCategoryImage, styles.subCategoryImagePlaceholder]}>
+            <Ionicons name="image-outline" size={32} color={colors.textMuted} />
+          </View>
+        )}
+        <Text style={styles.subCategoryName} numberOfLines={2}>
+          {displayName}
+        </Text>
+      </Pressable>
+    );
+  };
+
+  const renderProductGrid = () => {
+    if (loading) {
+      return (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Loading...</Text>
         </View>
-      ) : error ? (
-        <View style={styles.centered}>
-          <Ionicons name="alert-circle-outline" size={48} color={colors.error || colors.textMuted} />
-          <Text style={styles.errorText}>{error}</Text>
-          <Pressable onPress={() => load()} style={styles.retryBtn}>
-            <Text style={styles.retryText}>Retry</Text>
-          </Pressable>
-        </View>
-      ) : products.length === 0 ? (
-        <>
-          {renderHeader()}
+      );
+    }
+
+
+    // Show categories or sub-categories
+    return (
+      <ScrollView
+        style={styles.productsContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* All Categories Section - Show main categories with images */}
+        {selectedCategoryId === null && mainCategories.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>All Categories</Text>
+            </View>
+            <View style={styles.categoryGrid}>
+              {mainCategories.map((category) => renderCategoryCard(category))}
+            </View>
+          </View>
+        )}
+
+        {/* Recommended Section */}
+        {selectedCategoryId === null && recommendedSubCategories.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Recommend</Text>
+            </View>
+            <View style={styles.subCategoryGrid}>
+              {recommendedSubCategories.map((subCat) => renderSubCategoryCard(subCat))}
+            </View>
+          </View>
+        )}
+
+        {/* Hot Section */}
+        {selectedCategoryId === null && hotSubCategories.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Hot</Text>
+            </View>
+            <View style={styles.subCategoryGrid}>
+              {hotSubCategories.map((subCat) => renderSubCategoryCard(subCat))}
+            </View>
+          </View>
+        )}
+
+        {/* Sub-categories for selected main category */}
+        {selectedCategoryId && subCategories.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>
+                {mainCategories.find(c => c.id === selectedCategoryId)?.name_en ?? 'Products'}
+              </Text>
+            </View>
+            <View style={styles.subCategoryGrid}>
+              {subCategories.map((subCat) => renderSubCategoryCard(subCat))}
+            </View>
+          </View>
+        )}
+
+        {/* Empty state */}
+        {selectedCategoryId && subCategories.length === 0 && !loading && (
           <View style={styles.centered}>
             <Ionicons name="cube-outline" size={48} color={colors.textMuted} />
-            <Text style={styles.errorText}>No products found</Text>
-            <Text style={[styles.errorText, { fontSize: 12, marginTop: 4 }]}>
-              {search ? 'Try a different search term' : 'Products will appear here once added'}
-            </Text>
+            <Text style={styles.emptyText}>No sub-categories found</Text>
           </View>
-        </>
-      ) : (
-        <FlatList
-          data={products}
-          numColumns={2}
-          keyExtractor={(p) => p.id}
-          contentContainerStyle={styles.grid}
-          columnWrapperStyle={styles.gridRow}
-          ListHeaderComponent={renderHeader}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
-          renderItem={({ item }) => {
-            const img = item.product_images?.[0]?.url;
-            return (
-              <Pressable
-                style={({ pressed }) => [styles.cardWrap, pressed && { opacity: 0.9 }]}
-                onPress={() => router.push(`/products/${item.id}`)}
-              >
-                <Card style={styles.card}>
-                  {img ? (
-                    <Image source={{ uri: img }} style={styles.img} />
-                  ) : (
-                    <View style={[styles.img, styles.imgPlaceholder]}>
-                      <Ionicons name="image-outline" size={40} color={colors.textMuted} />
-                    </View>
-                  )}
-                  <View style={styles.cardBody}>
-                    <Text style={styles.name} numberOfLines={2}>
-                      {item.name_sw ?? item.name_en ?? 'Product'}
-                    </Text>
-                    <Text style={styles.price}>TZS {Number(item.price_tzs).toLocaleString()}</Text>
-                  </View>
-                </Card>
-              </Pressable>
-            );
-          }}
-        />
-      )}
+        )}
+      </ScrollView>
+    );
+  };
+
+  return (
+    <Screen edges={['top']}>
+      {renderSearchHeader()}
+      <View style={styles.container}>
+        {renderProductGrid()}
+      </View>
+      {renderCategoryMenu()}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { padding: spacing.lg, paddingBottom: spacing.md },
-  title: { ...typography.title, color: colors.textPrimary, marginBottom: 4 },
-  subtitle: { ...typography.bodySmall, color: colors.textSecondary, marginBottom: spacing.md },
-  search: { marginBottom: spacing.sm },
-  chips: { gap: 8, paddingVertical: 4 },
-  chip: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: radius.full,
-    backgroundColor: colors.borderLight,
-    marginRight: 8,
+  container: {
+    flex: 1,
   },
-  chipActive: { backgroundColor: colors.primary },
-  chipText: { ...typography.caption, color: colors.textSecondary },
-  chipTextActive: { color: colors.onPrimary, fontWeight: '600' },
-  grid: { padding: spacing.lg, paddingTop: 0, paddingBottom: 100 },
-  header: { padding: spacing.lg, paddingBottom: spacing.md },
-  gridRow: { gap: 12, marginBottom: 12 },
-  cardWrap: { flex: 1, maxWidth: '48%' },
-  card: { overflow: 'hidden' },
-  img: {
+  searchHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
+    backgroundColor: colors.background,
+  },
+  menuButton: {
+    padding: spacing.xs,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    borderRadius: radius.xl,
+    paddingHorizontal: spacing.md,
+    height: 40,
+  },
+  searchIcon: {
+    marginRight: spacing.xs,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  notificationIcon: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: '#FF6B6B',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  productsContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  menuOverlay: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  menuOverlayAnimated: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  menuContainer: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: SCREEN_WIDTH * 0.8,
+    backgroundColor: colors.surface,
+    shadowColor: '#000',
+    shadowOffset: { width: 2, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  menuHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
+  menuTitle: {
+    ...typography.heading,
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  menuContent: {
+    maxHeight: SCREEN_WIDTH * 0.8,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
+  menuItemActive: {
+    backgroundColor: colors.primary + '10',
+  },
+  menuItemText: {
+    ...typography.body,
+    fontSize: 16,
+    color: colors.textPrimary,
+    flex: 1,
+  },
+  menuItemTextActive: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  section: {
+    padding: spacing.md,
+    paddingBottom: spacing.lg,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  sectionTitle: {
+    ...typography.heading,
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  sectionLink: {
+    ...typography.body,
+    color: colors.textSecondary,
+    fontSize: 14,
+  },
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    justifyContent: 'flex-start',
+    paddingHorizontal: spacing.xs,
+  },
+  categoryCard: {
+    width: (SCREEN_WIDTH - spacing.md * 2 - spacing.xs * 4) / 3,
+    backgroundColor: colors.surface,
+    borderRadius: radius.sm,
+    marginBottom: spacing.sm,
+    overflow: 'hidden',
+  },
+  categoryImage: {
     width: '100%',
     aspectRatio: 1,
     backgroundColor: colors.borderLight,
   },
-  imgPlaceholder: { alignItems: 'center', justifyContent: 'center' },
-  cardBody: { padding: spacing.md },
-  name: { ...typography.bodySmall, color: colors.textPrimary, marginBottom: 4 },
-  price: { ...typography.subheading, color: colors.primary },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
-  loadingText: { ...typography.caption, color: colors.textSecondary, marginTop: 12 },
-  errorText: { ...typography.body, color: colors.textSecondary, textAlign: 'center', marginTop: 12 },
-  retryBtn: { marginTop: spacing.lg, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: colors.primary, borderRadius: 12 },
-  retryText: { ...typography.caption, color: colors.onPrimary, fontWeight: '600' },
+  categoryImagePlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  categoryName: {
+    ...typography.body,
+    fontSize: 12,
+    color: colors.textPrimary,
+    padding: spacing.xs,
+    textAlign: 'center',
+  },
+  subCategoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    justifyContent: 'flex-start',
+    paddingHorizontal: spacing.xs,
+  },
+  subCategoryCard: {
+    width: (SCREEN_WIDTH - spacing.md * 2 - spacing.xs * 4) / 3,
+    backgroundColor: colors.surface,
+    borderRadius: radius.sm,
+    marginBottom: spacing.sm,
+    overflow: 'hidden',
+  },
+  subCategoryImage: {
+    width: '100%',
+    aspectRatio: 1,
+    backgroundColor: colors.borderLight,
+  },
+  subCategoryImagePlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  subCategoryName: {
+    ...typography.body,
+    fontSize: 12,
+    color: colors.textPrimary,
+    padding: spacing.xs,
+    textAlign: 'center',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+  },
+  loadingText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: spacing.md,
+  },
+  emptyText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: spacing.md,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  backButtonText: {
+    ...typography.body,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  productGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    justifyContent: 'flex-start',
+  },
+  productImage: {
+    width: '100%',
+    aspectRatio: 1,
+    backgroundColor: colors.borderLight,
+  },
+  productImagePlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  productName: {
+    ...typography.body,
+    fontSize: 12,
+    color: colors.textPrimary,
+    padding: spacing.xs,
+    textAlign: 'center',
+  },
+  productOriginalPrice: {
+    ...typography.body,
+    fontSize: 10,
+    color: colors.textMuted,
+    textDecorationLine: 'line-through',
+    paddingHorizontal: spacing.xs,
+    textAlign: 'center',
+  },
+  productPrice: {
+    ...typography.body,
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    paddingHorizontal: spacing.xs,
+    paddingBottom: spacing.xs,
+    textAlign: 'center',
+  },
 });

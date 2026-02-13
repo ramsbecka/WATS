@@ -19,7 +19,7 @@ export default function Inventory() {
       .from('inventory')
       .select(`
         id, product_id, quantity, reserved, updated_at,
-        products(id, name_sw, name_en, sku),
+        products(id, name_en, sku),
         fulfillment_centers(id, name, region)
       `)
       .then(({ data, error }) => {
@@ -80,7 +80,7 @@ export default function Inventory() {
                 <tr key={r.id} className={r.quantity <= LOW_STOCK_THRESHOLD ? 'bg-amber-50/50' : ''}>
                   <td className="px-5 py-3.5">
                     <Link href={`/products/${r.product_id}`} className="font-medium text-primary hover:text-primary-dark">
-                      {r.products?.name_sw ?? r.products?.name_en ?? r.product_id}
+                      {r.products?.name_en ?? r.product_id}
                     </Link>
                     {r.products?.sku && <span className="ml-1 text-slate-500">({r.products.sku})</span>}
                     {r.quantity <= LOW_STOCK_THRESHOLD && (

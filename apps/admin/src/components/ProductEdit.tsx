@@ -12,9 +12,7 @@ type ImageRow = { id?: string; url: string; sort_order: number; file?: File };
 
 type FeatureRow = {
   id?: string;
-  title_sw: string;
   title_en: string;
-  description_sw: string;
   description_en: string;
   media_type: 'image' | 'video' | '';
   media_url: string;
@@ -33,7 +31,9 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [vendors, setVendors] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [mainCategories, setMainCategories] = useState<any[]>([]);
+  const [subCategories, setSubCategories] = useState<any[]>([]);
+  const [selectedMainCategoryId, setSelectedMainCategoryId] = useState<string>('');
   const [images, setImages] = useState<ImageRow[]>([]);
   const [newImageUrl, setNewImageUrl] = useState('');
   const [features, setFeatures] = useState<FeatureRow[]>([]);
@@ -41,9 +41,7 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
     vendor_id: '',
     category_id: '',
     sku: '',
-    name_sw: '',
     name_en: '',
-    description_sw: '',
     description_en: '',
     price_tzs: '',
     compare_at_price_tzs: '',
@@ -53,8 +51,55 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
 
   useEffect(() => {
     supabase.from('vendors').select('id, business_name').then(({ data }) => setVendors(data ?? []));
-    supabase.from('categories').select('id, name_sw, name_en').then(({ data }) => setCategories(data ?? []));
+    // Load main categories (parent_id is null)
+    supabase
+      .from('categories')
+      .select('id, name_en, parent_id')
+      .eq('is_active', true)
+      .is('parent_id', null)
+      .order('sort_order')
+      .then(({ data }) => setMainCategories(data ?? []));
   }, []);
+
+  useEffect(() => {
+    // Load sub-categories when main category is selected
+    if (selectedMainCategoryId) {
+      supabase
+        .from('categories')
+        .select('id, name_en')
+        .eq('is_active', true)
+        .eq('parent_id', selectedMainCategoryId)
+        .order('sort_order')
+        .then(({ data }) => setSubCategories(data ?? []));
+    } else {
+      setSubCategories([]);
+    }
+  }, [selectedMainCategoryId]);
+
+  useEffect(() => {
+    // When category_id changes, find if it's a main category or sub-category
+    if (form.category_id) {
+      // Check if it's a main category
+      const isMain = mainCategories.some(c => c.id === form.category_id);
+      if (isMain) {
+        setSelectedMainCategoryId(form.category_id);
+      } else {
+        // It's a sub-category, find its parent
+        supabase
+          .from('categories')
+          .select('parent_id')
+          .eq('id', form.category_id)
+          .single()
+          .then(({ data }) => {
+            if (data?.parent_id) {
+              setSelectedMainCategoryId(data.parent_id);
+            }
+          });
+      }
+    } else {
+      setSelectedMainCategoryId('');
+    }
+  }, [form.category_id, mainCategories]);
 
   useEffect(() => {
     if (isNew || !id) return;
@@ -63,26 +108,40 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
       supabase.from('product_images').select('id, url, sort_order').eq('product_id', id).order('sort_order'),
       supabase.from('product_features').select('*').eq('product_id', id).order('sort_order'),
     ]).then(([prod, imgs, feats]) => {
-      if (prod.data)
+      if (prod.data) {
+        const categoryId = prod.data.category_id ?? '';
         setForm({
           vendor_id: prod.data.vendor_id ?? '',
-          category_id: prod.data.category_id ?? '',
+          category_id: categoryId,
           sku: prod.data.sku ?? '',
-          name_sw: prod.data.name_sw ?? '',
           name_en: prod.data.name_en ?? '',
-          description_sw: prod.data.description_sw ?? '',
           description_en: prod.data.description_en ?? '',
           price_tzs: String(prod.data.price_tzs ?? ''),
           compare_at_price_tzs: prod.data.compare_at_price_tzs != null ? String(prod.data.compare_at_price_tzs) : '',
           cost_tzs: prod.data.cost_tzs != null ? String(prod.data.cost_tzs) : '',
           is_active: prod.data.is_active ?? true,
         });
+        // Set main category if product has a category
+        if (categoryId) {
+          // Check if it's a main category or sub-category
+          supabase
+            .from('categories')
+            .select('parent_id')
+            .eq('id', categoryId)
+            .single()
+            .then(({ data }) => {
+              if (data?.parent_id) {
+                setSelectedMainCategoryId(data.parent_id);
+              } else {
+                setSelectedMainCategoryId(categoryId);
+              }
+            });
+        }
+      }
       setImages((imgs.data ?? []).map((r: any, i) => ({ id: r.id, url: r.url, sort_order: i })));
       setFeatures((feats.data ?? []).map((f: any, i) => ({
         id: f.id,
-        title_sw: f.title_sw ?? '',
         title_en: f.title_en ?? '',
-        description_sw: f.description_sw ?? '',
         description_en: f.description_en ?? '',
         media_type: f.media_type ?? '',
         media_url: f.media_url ?? '',
@@ -112,14 +171,12 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
     }
     setSaving(true);
     try {
-      const generatedSKU = generateSKU(form.name_sw || form.name_en || 'Product', form.sku);
+      const generatedSKU = generateSKU(form.name_en || 'Product', form.sku);
       const payload = {
         vendor_id: form.vendor_id,
         category_id: form.category_id || null,
         sku: generatedSKU,
-        name_sw: form.name_sw,
-        name_en: form.name_en || null,
-        description_sw: form.description_sw || null,
+        name_en: form.name_en,
         description_en: form.description_en || null,
         price_tzs: Number(form.price_tzs) || 0,
         compare_at_price_tzs: form.compare_at_price_tzs ? Number(form.compare_at_price_tzs) : null,
@@ -178,7 +235,7 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
       const featureErrors: string[] = [];
       for (let i = 0; i < features.length; i++) {
         const feat = features[i];
-        if (!feat.title_sw && !feat.title_en && !feat.description_sw && !feat.description_en) continue;
+        if (!feat.title_en && !feat.description_en) continue;
         let mediaUrl = feat.media_url;
         if (feat.media_file) {
           try {
@@ -202,9 +259,7 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
         }
         const { error: featErr } = await supabase.from('product_features').insert({
           product_id: productId,
-          title_sw: feat.title_sw || null,
           title_en: feat.title_en || null,
-          description_sw: feat.description_sw || null,
           description_en: feat.description_en || null,
           media_type: feat.media_type || null,
           media_url: mediaUrl || null,
@@ -262,9 +317,7 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
     setFeatures((prev) => [
       ...prev,
       {
-        title_sw: '',
         title_en: '',
-        description_sw: '',
         description_en: '',
         media_type: '',
         media_url: '',
@@ -332,16 +385,41 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700">Category</label>
+            <label className="block text-sm font-medium text-slate-700">Category (Kundi kuu)</label>
             <select
-              aria-label="Category"
-              value={form.category_id}
-              onChange={(e) => setForm((f) => ({ ...f, category_id: e.target.value }))}
+              aria-label="Main Category"
+              value={selectedMainCategoryId}
+              onChange={(e) => {
+                setSelectedMainCategoryId(e.target.value);
+                setForm((f) => ({ ...f, category_id: e.target.value || '' }));
+              }}
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             >
               <option value="">–</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name_sw ?? c.name_en}</option>
+              {mainCategories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name_en}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium text-slate-700">
+              Sub-category (Kundi) {selectedMainCategoryId && subCategories.length === 0 && <span className="text-xs text-slate-400">(hakuna sub-categories)</span>}
+            </label>
+            <select
+              aria-label="Sub-category"
+              value={form.category_id}
+              onChange={(e) => setForm((f) => ({ ...f, category_id: e.target.value }))}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              disabled={!selectedMainCategoryId || subCategories.length === 0}
+            >
+              <option value="">{selectedMainCategoryId ? (subCategories.length > 0 ? 'Chagua sub-category' : 'Hakuna sub-categories') : 'Chagua category kwanza'}</option>
+              {selectedMainCategoryId && (
+                <option value={selectedMainCategoryId}>Tumia main category</option>
+              )}
+              {subCategories.map((sc) => (
+                <option key={sc.id} value={sc.id}>{sc.name_en}</option>
               ))}
             </select>
           </div>
@@ -354,33 +432,20 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
             aria-labelledby="product-sku-label"
             value={form.sku}
             onChange={(e) => setForm((f) => ({ ...f, sku: e.target.value }))}
-            placeholder={generateSKU(form.name_sw || form.name_en || 'Product')}
+            placeholder={generateSKU(form.name_en || 'Product')}
             className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label id="product-name_sw-label" className="block text-sm font-medium text-slate-700">Name (Swahili)</label>
-            <input
-              id="product-name_sw"
-              aria-labelledby="product-name_sw-label"
-              value={form.name_sw}
-              onChange={(e) => setForm((f) => ({ ...f, name_sw: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              required
-            />
-          </div>
-          <div>
-            <label id="product-name_en-label" className="block text-sm font-medium text-slate-700">Name (English)</label>
-            <input
-              id="product-name_en"
-              aria-labelledby="product-name_en-label"
-              placeholder="Optional"
-              value={form.name_en}
-              onChange={(e) => setForm((f) => ({ ...f, name_en: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            />
-          </div>
+        <div>
+          <label id="product-name_en-label" className="block text-sm font-medium text-slate-700">Name</label>
+          <input
+            id="product-name_en"
+            aria-labelledby="product-name_en-label"
+            value={form.name_en}
+            onChange={(e) => setForm((f) => ({ ...f, name_en: e.target.value }))}
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            required
+          />
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
@@ -424,18 +489,7 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
           </div>
         </div>
         <div>
-          <label id="product-desc_sw-label" className="block text-sm font-medium text-slate-700">Description (Swahili)</label>
-          <textarea
-            id="product-desc_sw"
-            aria-labelledby="product-desc_sw-label"
-            value={form.description_sw}
-            onChange={(e) => setForm((f) => ({ ...f, description_sw: e.target.value }))}
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            rows={3}
-          />
-        </div>
-        <div>
-          <label id="product-desc_en-label" className="block text-sm font-medium text-slate-700">Description (English)</label>
+          <label id="product-desc_en-label" className="block text-sm font-medium text-slate-700">Description</label>
           <textarea
             id="product-desc_en"
             aria-labelledby="product-desc_en-label"
@@ -588,47 +642,24 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
                       </button>
                     </div>
                   </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">Title (Swahili)</label>
-                      <input
-                        value={feature.title_sw}
-                        onChange={(e) => updateFeature(index, { title_sw: e.target.value })}
-                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                        placeholder="Kichwa cha habari"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">Title (English)</label>
-                      <input
-                        value={feature.title_en}
-                        onChange={(e) => updateFeature(index, { title_en: e.target.value })}
-                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                        placeholder="Feature title"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600">Title</label>
+                    <input
+                      value={feature.title_en}
+                      onChange={(e) => updateFeature(index, { title_en: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      placeholder="Feature title"
+                    />
                   </div>
-                  <div className="mt-3 grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">Description (Swahili)</label>
-                      <textarea
-                        value={feature.description_sw}
-                        onChange={(e) => updateFeature(index, { description_sw: e.target.value })}
-                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                        rows={3}
-                        placeholder="Maelezo ya kina..."
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">Description (English)</label>
-                      <textarea
-                        value={feature.description_en}
-                        onChange={(e) => updateFeature(index, { description_en: e.target.value })}
-                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                        rows={3}
-                        placeholder="Detailed description..."
-                      />
-                    </div>
+                  <div className="mt-3">
+                    <label className="block text-xs font-medium text-slate-600">Description</label>
+                    <textarea
+                      value={feature.description_en}
+                      onChange={(e) => updateFeature(index, { description_en: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      rows={3}
+                      placeholder="Detailed description..."
+                    />
                   </div>
                   <div className="mt-3">
                     <label htmlFor={`feature-media-${index}`} className="block text-xs font-medium text-slate-600 mb-2">Media (Picha au Video)</label>
@@ -698,7 +729,7 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
             <button
               type="button"
               onClick={async () => {
-                const productName = form.name_sw || form.name_en || 'Product';
+                const productName = form.name_en || 'Product';
                 if (!confirm(`Je, una uhakika unataka kufuta bidhaa "${productName}"?\n\nHii itaondoa bidhaa kabisa pamoja na variants, picha, na maelezo yake. Hutaweza kuirejesha.`)) {
                   return;
                 }

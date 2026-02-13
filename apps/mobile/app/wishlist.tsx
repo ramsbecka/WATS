@@ -130,7 +130,7 @@ export default function Wishlist() {
               <Card style={styles.row}>
                 {img ? <Image source={{ uri: img }} style={styles.thumb} /> : <View style={[styles.thumb, styles.thumbPlaceholder]} />}
                 <View style={styles.rowBody}>
-                  <Text style={styles.name} numberOfLines={2}>{p?.name_sw ?? p?.name_en ?? ''}</Text>
+                  <Text style={styles.name} numberOfLines={2}>{p?.name_en ?? ''}</Text>
                   <Text style={styles.price}>TZS {p ? Number(p.price_tzs).toLocaleString() : ''}</Text>
                 </View>
                 <Pressable onPress={() => handleRemove(item.product_id)} style={styles.removeBtn}>

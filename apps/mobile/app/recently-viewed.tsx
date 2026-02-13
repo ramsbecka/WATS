@@ -108,7 +108,7 @@ export default function RecentlyViewed() {
                 />
                 <View style={styles.productInfo}>
                   <Text style={styles.productName} numberOfLines={2}>
-                    {product.name_sw || product.name_en}
+                    {product.name_en}
                   </Text>
                   <Text style={styles.productPrice}>
                     TZS {Number(product.price_tzs).toLocaleString()}

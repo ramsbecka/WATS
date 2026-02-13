@@ -26,7 +26,7 @@ export default function Vouchers() {
         valid_from, valid_until, created_at,
         profile(id, display_name, email),
         orders(order_number),
-        products(id, name_sw, name_en)
+        products(id, name_en)
       `)
       .order('created_at', { ascending: false })
       .limit(200);
@@ -125,7 +125,7 @@ export default function Vouchers() {
                     <td className="px-5 py-3.5 text-sm text-slate-600">
                       {v.products ? (
                         <Link href={`/products/${v.products.id}`} className="text-primary hover:underline">
-                          {v.products.name_sw || v.products.name_en || 'N/A'}
+                          {v.products.name_en || 'N/A'}
                         </Link>
                       ) : (
                         'N/A'

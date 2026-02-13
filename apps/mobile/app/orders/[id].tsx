@@ -61,7 +61,7 @@ export default function OrderDetail() {
           shipping_address, created_at,
           order_items(
             id, quantity, unit_price_tzs, total_tzs,
-            products(id, name_sw, name_en, product_images(url))
+            products(id, name_en, product_images(url))
           ),
           shipments(
             id, status, tracking_number, carrier, estimated_delivery_date,
@@ -196,7 +196,7 @@ export default function OrderDetail() {
           <Text style={styles.sectionTitle}>Items</Text>
           {order.order_items?.map((item: any) => (
             <View key={item.id} style={styles.itemRow}>
-              <Text style={styles.itemName}>{item.products?.name_sw ?? item.products?.name_en ?? 'Product'}</Text>
+              <Text style={styles.itemName}>{item.products?.name_en ?? 'Product'}</Text>
               <Text style={styles.itemMeta}>x{item.quantity} - TZS {Number(item.total_tzs).toLocaleString()}</Text>
             </View>
           ))}

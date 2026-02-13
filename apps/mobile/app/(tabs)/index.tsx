@@ -7,15 +7,16 @@ import { getCategories, getProducts, getBanners } from '@/api/client';
 import { colors, spacing, typography, radius } from '@/theme/tokens';
 import { useAuthStore } from '@/store/auth';
 import ProductRecommendations from '@/components/ai/ProductRecommendations';
+import type { Category, Product } from '@/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function Home() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [categories, setCategories] = useState<any[]>([]);
-  const [flashSaleProducts, setFlashSaleProducts] = useState<any[]>([]);
-  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [flashSaleProducts, setFlashSaleProducts] = useState<Product[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [banners, setBanners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,7 +57,6 @@ export default function Home() {
       const onSaleProducts = products.data.filter((p: any) => p.compare_at_price_tzs && Number(p.compare_at_price_tzs) > Number(p.price_tzs));
       setFlashSaleProducts(onSaleProducts.slice(0, 10));
       setFeaturedProducts(products.data.slice(0, 20));
-      console.log('Banners loaded:', bannerData?.length || 0, bannerData);
       setBanners(bannerData || []);
     } catch (error) {
       console.error('Failed to load home data:', error);
@@ -146,7 +146,7 @@ export default function Home() {
 
     const categoryItems = categories.slice(0, 4).map((cat, idx) => ({
       id: cat.id,
-      name: cat.name_sw || cat.name_en || 'Category',
+      name: cat.name_en || 'Category',
       image: cat.image_url,
       isImage: true,
     }));
@@ -195,7 +195,7 @@ export default function Home() {
       router.push(`/products/${banner.button_link}`);
     } else if (banner.link_type === 'url') {
       // Handle external URL if needed
-      console.log('External URL:', banner.button_link);
+      // External URL handling - can be implemented later
     }
   };
 
@@ -218,10 +218,10 @@ export default function Home() {
           ) : (
             <View style={styles.bannerImagePlaceholder} />
           )}
-          {(banner.title_sw || banner.title_en) && (
+          {banner.title_en && (
             <View style={styles.bannerOverlay}>
               <Text style={styles.bannerTitle}>
-                {banner.title_sw || banner.title_en}
+                {banner.title_en}
               </Text>
             </View>
           )}
@@ -241,7 +241,7 @@ export default function Home() {
 
   const renderBanner = () => {
     if (banners.length === 0) {
-      console.log('No banners to display');
+                // No banners to display
       return null;
     }
 
@@ -293,29 +293,60 @@ export default function Home() {
     );
   };
 
-  const renderWATSPicks = () => (
-    <View style={styles.watsPicksSection}>
-      <Text style={styles.sectionTitle}>WATS Picks</Text>
-      <View style={styles.categoryGrid}>
-        {categories.map((cat) => (
-          <Pressable
-            key={cat.id}
-            style={styles.categoryCard}
-            onPress={() => router.push(`/(tabs)/products?category=${cat.id}`)}
-          >
-            {cat.image_url ? (
-              <Image source={{ uri: cat.image_url }} style={styles.categoryCardImage} />
-            ) : (
-              <View style={[styles.categoryCardImage, styles.placeholderImage]} />
-            )}
-            <Text style={styles.categoryCardName} numberOfLines={1}>
-              {cat.name_sw || cat.name_en || 'Category'}
-            </Text>
+  const renderWATSPicks = () => {
+    if (loading && categories.length === 0) {
+      return (
+        <View style={styles.watsPicksSection}>
+          <Text style={styles.sectionTitle}>WATS Picks</Text>
+          <View style={styles.categoryGrid}>
+            {[1, 2, 3, 4].map((i) => (
+              <View key={i} style={styles.categoryCard}>
+                <View style={[styles.categoryCardImage, styles.placeholderImage]} />
+                <View style={styles.categoryCardNamePlaceholder} />
+              </View>
+            ))}
+          </View>
+        </View>
+      );
+    }
+
+    if (categories.length === 0) return null;
+
+    return (
+      <View style={styles.watsPicksSection}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>WATS Picks</Text>
+          <Pressable onPress={() => router.push('/(tabs)/products')}>
+            <Text style={styles.sectionLink}>See All</Text>
           </Pressable>
-        ))}
+        </View>
+        <View style={styles.categoryGrid}>
+          {categories.slice(0, 4).map((cat) => (
+            <Pressable
+              key={cat.id}
+              style={styles.categoryCard}
+              onPress={() => router.push(`/(tabs)/products?category=${cat.id}`)}
+            >
+              {cat.image_url ? (
+                <Image 
+                  source={{ uri: cat.image_url }} 
+                  style={styles.categoryCardImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={[styles.categoryCardImage, styles.placeholderImage]}>
+                  <Ionicons name="image-outline" size={32} color={colors.textMuted} />
+                </View>
+              )}
+              <Text style={styles.categoryCardName} numberOfLines={2}>
+                {cat.name_en || 'Category'}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   const renderProductGrid = () => {
     if (featuredProducts.length === 0) return null;
@@ -351,7 +382,7 @@ export default function Home() {
                   )}
                 </View>
                 <Text style={styles.productName} numberOfLines={2}>
-                  {product.name_sw || product.name_en || 'Product'}
+                  {product.name_en || 'Product'}
                 </Text>
                 <View style={styles.productPriceRow}>
                   <Text style={styles.productPrice}>{price.toLocaleString()} TSh</Text>
@@ -367,67 +398,6 @@ export default function Home() {
     );
   };
 
-  const renderAIQuickActions = () => {
-    if (!user) return null;
-
-    const quickActions = [
-      {
-        id: 'find-product',
-        title: 'Find Product',
-        icon: 'search',
-        description: 'Ask AI to find products',
-        onPress: () => router.push('/chatbot'),
-      },
-      {
-        id: 'track-order',
-        title: 'Track Order',
-        icon: 'location',
-        description: 'Check order status',
-        onPress: () => router.push('/(tabs)/orders'),
-      },
-      {
-        id: 'get-help',
-        title: 'Get Help',
-        icon: 'help-circle',
-        description: 'AI assistant support',
-        onPress: () => router.push('/chatbot'),
-      },
-      {
-        id: 'suggestions',
-        title: 'Suggestions',
-        icon: 'bulb',
-        description: 'Personalized recommendations',
-        onPress: () => {
-          // Scroll to recommendations
-          scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-        },
-      },
-    ];
-
-    return (
-      <View style={styles.aiQuickActionsSection}>
-        <View style={styles.aiQuickActionsHeader}>
-          <Ionicons name="sparkles" size={20} color={colors.primary} />
-          <Text style={styles.aiQuickActionsTitle}>AI Quick Actions</Text>
-        </View>
-        <View style={styles.aiQuickActionsGrid}>
-          {quickActions.map((action) => (
-            <Pressable
-              key={action.id}
-              style={styles.aiQuickActionCard}
-              onPress={action.onPress}
-            >
-              <View style={styles.aiQuickActionIcon}>
-                <Ionicons name={action.icon as any} size={24} color={colors.primary} />
-              </View>
-              <Text style={styles.aiQuickActionTitle}>{action.title}</Text>
-              <Text style={styles.aiQuickActionDescription}>{action.description}</Text>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-    );
-  };
 
   if (loading) {
     return (
@@ -454,7 +424,6 @@ export default function Home() {
         {renderWATSPicks()}
         {user && <ProductRecommendations limit={8} title="AI Recommended for You" />}
         {renderProductGrid()}
-        {renderAIQuickActions()}
         <View style={styles.bottomSpacer} />
       </ScrollView>
     </Screen>
@@ -689,12 +658,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.xl,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
   sectionTitle: {
     ...typography.heading,
     fontSize: 20,
     fontWeight: '800',
     color: colors.textPrimary,
-    marginBottom: spacing.md,
+  },
+  sectionLink: {
+    ...typography.body,
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '600',
   },
   categoryGrid: {
     flexDirection: 'row',
@@ -751,6 +731,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     padding: spacing.sm,
     textAlign: 'center',
+    fontSize: 13,
+  },
+  categoryCardNamePlaceholder: {
+    height: 16,
+    backgroundColor: colors.borderLight,
+    margin: spacing.sm,
+    borderRadius: 4,
   },
   // Products Section
   productsSection: {
@@ -823,59 +810,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  // AI Quick Actions
-  aiQuickActionsSection: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
-  },
-  aiQuickActionsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  aiQuickActionsTitle: {
-    ...typography.heading,
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  aiQuickActionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-  },
-  aiQuickActionCard: {
-    width: (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 2,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  aiQuickActionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: `${colors.primary}15`,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  aiQuickActionTitle: {
-    ...typography.subheading,
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-    textAlign: 'center',
-  },
-  aiQuickActionDescription: {
-    ...typography.caption,
-    fontSize: 11,
-    color: colors.textMuted,
-    textAlign: 'center',
   },
 });

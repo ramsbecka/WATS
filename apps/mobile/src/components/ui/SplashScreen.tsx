@@ -8,9 +8,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 interface SplashImage {
   id: string;
   image_url: string;
-  title_sw?: string;
   title_en?: string;
-  description_sw?: string;
   description_en?: string;
   sort_order: number;
 }

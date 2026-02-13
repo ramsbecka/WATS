@@ -9,11 +9,8 @@ const BANNER_PREFIX = 'banners';
 type Banner = {
   id?: string;
   image_url: string;
-  title_sw: string;
   title_en: string;
-  description_sw: string;
   description_en: string;
-  button_text_sw: string;
   button_text_en: string;
   button_link: string;
   link_type: 'category' | 'product' | 'url' | null;
@@ -28,11 +25,8 @@ export default function Banners() {
   const [uploading, setUploading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newBanner, setNewBanner] = useState<Partial<Banner>>({
-    title_sw: '',
     title_en: '',
-    description_sw: '',
     description_en: '',
-    button_text_sw: 'Shop Now',
     button_text_en: 'Shop Now',
     button_link: '',
     link_type: null,
@@ -85,11 +79,8 @@ export default function Banners() {
       const maxOrder = banners.length > 0 ? Math.max(...banners.map((b) => b.sort_order)) : -1;
       const { error } = await supabase.from('banners').insert({
         image_url: imageUrl,
-        title_sw: newBanner.title_sw || null,
         title_en: newBanner.title_en || null,
-        description_sw: newBanner.description_sw || null,
         description_en: newBanner.description_en || null,
-        button_text_sw: newBanner.button_text_sw || 'Shop Now',
         button_text_en: newBanner.button_text_en || 'Shop Now',
         button_link: newBanner.button_link || null,
         link_type: newBanner.link_type || null,
@@ -99,11 +90,8 @@ export default function Banners() {
       if (error) throw error;
       setShowAddForm(false);
       setNewBanner({
-        title_sw: '',
         title_en: '',
-        description_sw: '',
         description_en: '',
-        button_text_sw: 'Shop Now',
         button_text_en: 'Shop Now',
         button_link: '',
         link_type: null,
@@ -168,11 +156,8 @@ export default function Banners() {
     const { error } = await supabase
       .from('banners')
       .update({
-        title_sw: banner.title_sw || null,
         title_en: banner.title_en || null,
-        description_sw: banner.description_sw || null,
         description_en: banner.description_en || null,
-        button_text_sw: banner.button_text_sw || 'Shop Now',
         button_text_en: banner.button_text_en || 'Shop Now',
         button_link: banner.button_link || null,
         link_type: banner.link_type || null,
@@ -253,22 +238,8 @@ export default function Banners() {
               />
             </div>
             <div>
-              <label htmlFor="banner-title-sw" className="mb-1.5 block text-sm font-medium text-slate-700">
-                Title (Swahili)
-              </label>
-              <input
-                id="banner-title-sw"
-                type="text"
-                value={newBanner.title_sw || ''}
-                onChange={(e) => setNewBanner((prev) => ({ ...prev, title_sw: e.target.value }))}
-                placeholder="Kichwa cha habari"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                aria-label="Banner title in Swahili"
-              />
-            </div>
-            <div>
               <label htmlFor="banner-title-en" className="mb-1.5 block text-sm font-medium text-slate-700">
-                Title (English)
+                Title
               </label>
               <input
                 id="banner-title-en"
@@ -277,26 +248,12 @@ export default function Banners() {
                 onChange={(e) => setNewBanner((prev) => ({ ...prev, title_en: e.target.value }))}
                 placeholder="Title"
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                aria-label="Banner title in English"
-              />
-            </div>
-            <div>
-              <label htmlFor="banner-description-sw" className="mb-1.5 block text-sm font-medium text-slate-700">
-                Description (Swahili)
-              </label>
-              <textarea
-                id="banner-description-sw"
-                value={newBanner.description_sw || ''}
-                onChange={(e) => setNewBanner((prev) => ({ ...prev, description_sw: e.target.value }))}
-                placeholder="Maelezo ya kina..."
-                rows={3}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                aria-label="Banner description in Swahili"
+                aria-label="Banner title"
               />
             </div>
             <div>
               <label htmlFor="banner-description-en" className="mb-1.5 block text-sm font-medium text-slate-700">
-                Description (English)
+                Description
               </label>
               <textarea
                 id="banner-description-en"
@@ -305,26 +262,12 @@ export default function Banners() {
                 placeholder="Detailed description..."
                 rows={3}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                aria-label="Banner description in English"
-              />
-            </div>
-            <div>
-              <label htmlFor="banner-button-text-sw" className="mb-1.5 block text-sm font-medium text-slate-700">
-                Button Text (Swahili)
-              </label>
-              <input
-                id="banner-button-text-sw"
-                type="text"
-                value={newBanner.button_text_sw || ''}
-                onChange={(e) => setNewBanner((prev) => ({ ...prev, button_text_sw: e.target.value }))}
-                placeholder="Shop Now"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                aria-label="Button text in Swahili"
+                aria-label="Banner description"
               />
             </div>
             <div>
               <label htmlFor="banner-button-text-en" className="mb-1.5 block text-sm font-medium text-slate-700">
-                Button Text (English)
+                Button Text
               </label>
               <input
                 id="banner-button-text-en"
@@ -333,7 +276,7 @@ export default function Banners() {
                 onChange={(e) => setNewBanner((prev) => ({ ...prev, button_text_en: e.target.value }))}
                 placeholder="Shop Now"
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                aria-label="Button text in English"
+                aria-label="Button text"
               />
             </div>
             <div>
@@ -411,7 +354,7 @@ export default function Banners() {
             <div className="relative aspect-[16/9] bg-slate-100">
               <img
                 src={banner.image_url}
-                alt={banner.title_sw || banner.title_en || 'Banner'}
+                alt={banner.title_en || 'Banner'}
                 className="h-full w-full object-cover"
               />
               <div className="absolute top-2 right-2">
@@ -450,29 +393,16 @@ export default function Banners() {
               </div>
               <input
                 type="text"
-                value={banner.title_sw || ''}
-                onChange={(e) => {
-                  const updated = { ...banner, title_sw: e.target.value };
-                  setBanners((prev) => prev.map((b) => (b.id === banner.id ? updated : b)));
-                }}
-                onBlur={() => handleUpdate(banner)}
-                placeholder="Title (Swahili)"
-                className="mb-2 w-full rounded border border-slate-300 px-2 py-1 text-sm"
-                aria-label="Edit title in Swahili"
-                title="Edit title in Swahili"
-              />
-              <input
-                type="text"
                 value={banner.title_en || ''}
                 onChange={(e) => {
                   const updated = { ...banner, title_en: e.target.value };
                   setBanners((prev) => prev.map((b) => (b.id === banner.id ? updated : b)));
                 }}
                 onBlur={() => handleUpdate(banner)}
-                placeholder="Title (English)"
+                placeholder="Title"
                 className="mb-2 w-full rounded border border-slate-300 px-2 py-1 text-sm"
-                aria-label="Edit title in English"
-                title="Edit title in English"
+                aria-label="Edit title"
+                title="Edit title"
               />
               <div className="mt-2 text-xs text-slate-500">
                 Link: {banner.link_type || 'None'} {banner.button_link ? `- ${banner.button_link}` : ''}

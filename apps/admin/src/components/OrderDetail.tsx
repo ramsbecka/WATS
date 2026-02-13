@@ -30,7 +30,7 @@ export default function OrderDetail() {
         *,
         order_items(
           id, quantity, unit_price_tzs, total_tzs,
-          products(id, name_sw, name_en)
+          products(id, name_en)
         )
       `).eq('id', id).single(),
       supabase.from('shipments').select(`
@@ -184,7 +184,7 @@ export default function OrderDetail() {
             {(order.order_items ?? []).map((item: any) => (
               <tr key={item.id}>
                 <td className="px-5 py-3 text-sm font-medium text-slate-900">
-                  {item.products?.name_sw ?? item.products?.name_en ?? item.id}
+                  {item.products?.name_en ?? item.id}
                 </td>
                 <td className="px-5 py-3 text-right text-sm text-slate-600">{item.quantity}</td>
                 <td className="px-5 py-3 text-right text-sm text-slate-600">TZS {Number(item.unit_price_tzs).toLocaleString()}</td>

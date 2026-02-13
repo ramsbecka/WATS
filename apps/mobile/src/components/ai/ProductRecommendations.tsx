@@ -100,7 +100,7 @@ export default function ProductRecommendations({
               )}
               <View style={styles.productInfo}>
                 <Text style={styles.productName} numberOfLines={2}>
-                  {item.name_sw || item.name_en}
+                  {item.name_en}
                 </Text>
                 <Text style={styles.productPrice}>
                   TZS {Number(item.price_tzs).toLocaleString()}

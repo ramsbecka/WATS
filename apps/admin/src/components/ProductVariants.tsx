@@ -6,8 +6,8 @@ import { supabase } from '@/lib/supabase';
 const MEDIA_BUCKET = 'media';
 const PRODUCTS_PREFIX = 'products';
 
-type VariantOption = { id: string; value_sw: string; value_en?: string; attribute_id: string };
-type VariantAttribute = { id: string; name_sw: string; name_en?: string };
+type VariantOption = { id: string; value_en: string; attribute_id: string };
+type VariantAttribute = { id: string; name_en: string };
 type VariantValue = { option_id: string; attribute_id: string };
 type VariantImage = { id?: string; url: string; sort_order: number; file?: File };
 type Variant = {
@@ -56,7 +56,7 @@ export default function ProductVariants({ productId, productImages = [] }: Props
       const attr = attributes.find((a) => a.id === val.attribute_id);
       const opt = optionsByAttribute[val.attribute_id]?.find((o) => o.id === val.option_id);
       if (opt) {
-        const value = opt.value_sw || opt.value_en || '';
+        const value = opt.value_en || '';
         optionValues.push(value.slice(0, 3).toUpperCase());
       }
     });
@@ -366,7 +366,7 @@ export default function ProductVariants({ productId, productImages = [] }: Props
                     return (
                       <div key={attr.id} className="space-y-2">
                         <label className="block text-xs font-medium text-slate-700 uppercase tracking-wide">
-                          {attr.name_sw || attr.name_en}
+                          {attr.name_en}
                         </label>
                         <div className="flex flex-wrap gap-2">
                           {options.map((opt) => {
@@ -382,7 +382,7 @@ export default function ProductVariants({ productId, productImages = [] }: Props
                                     : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50'
                                 }`}
                               >
-                                {opt.value_sw || opt.value_en}
+                                {opt.value_en}
                               </button>
                             );
                           })}

@@ -121,7 +121,7 @@ export default function Cart() {
         renderItem={({ item }) => (
           <Card style={styles.row}>
             <View style={styles.rowContent}>
-              <Text style={styles.itemName} numberOfLines={2}>{item.product?.name_sw ?? item.product_id}</Text>
+              <Text style={styles.itemName} numberOfLines={2}>{item.product?.name_en ?? item.product_id}</Text>
               <Text style={styles.itemMeta}>x{item.quantity}</Text>
               <Text style={styles.itemPrice}>TZS {((item.product?.price_tzs ?? 0) * item.quantity).toLocaleString()}</Text>
             </View>
