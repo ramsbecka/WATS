@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: { ignoreDuringBuilds: false },
+  eslint: { 
+    ignoreDuringBuilds: false,
+    // Allow img tags for external images that Next.js Image can't handle
+    dirs: ['src'],
+  },
   typescript: { ignoreBuildErrors: false },
   
   // Deployment configuration

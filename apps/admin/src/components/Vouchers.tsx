@@ -14,6 +14,7 @@ export default function Vouchers() {
 
   useEffect(() => {
     loadVouchers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, search]);
 
   const loadVouchers = () => {

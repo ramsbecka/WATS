@@ -295,7 +295,7 @@ export default function ProductVariants({ productId, productImages = [] }: Props
         </button>
       </div>
       {variants.length === 0 ? (
-        <p className="text-sm text-slate-500">Hakuna variants. Bofya "Add variant" kuongeza.</p>
+        <p className="text-sm text-slate-500">Hakuna variants. Bofya &quot;Add variant&quot; kuongeza.</p>
       ) : (
         <div className="space-y-4">
           {variants.map((variant, index) => (

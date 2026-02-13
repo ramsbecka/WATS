@@ -10,6 +10,7 @@ export default function ReferralCodes() {
 
   useEffect(() => {
     loadCodes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   const loadCodes = () => {

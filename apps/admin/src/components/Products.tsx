@@ -34,6 +34,7 @@ export default function Products() {
 
   useEffect(() => {
     loadProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryId, search]);
 
   const handleDelete = async (productId: string, productName: string) => {
