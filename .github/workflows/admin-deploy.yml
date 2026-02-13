@@ -51,8 +51,26 @@ jobs:
         run: |
           npm run build
 
+      - name: Check Vercel secrets
+        id: check-vercel
+        run: |
+          if [ -n "${{ secrets.VERCEL_TOKEN }}" ] && [ -n "${{ secrets.VERCEL_ORG_ID }}" ] && [ -n "${{ secrets.VERCEL_PROJECT_ID }}" ]; then
+            echo "has_vercel=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_vercel=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check Netlify secrets
+        id: check-netlify
+        run: |
+          if [ -n "${{ secrets.NETLIFY_AUTH_TOKEN }}" ] && [ -n "${{ secrets.NETLIFY_SITE_ID }}" ]; then
+            echo "has_netlify=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_netlify=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Deploy to Vercel
-        if: ${{ secrets.VERCEL_TOKEN != '' && secrets.VERCEL_ORG_ID != '' && secrets.VERCEL_PROJECT_ID != '' }}
+        if: steps.check-vercel.outputs.has_vercel == 'true'
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -62,7 +80,7 @@ jobs:
           working-directory: apps/admin
 
       - name: Deploy to Netlify (alternative)
-        if: ${{ secrets.NETLIFY_AUTH_TOKEN != '' && secrets.NETLIFY_SITE_ID != '' }}
+        if: steps.check-netlify.outputs.has_netlify == 'true'
         uses: nwtgck/actions-netlify@v3.0
         with:
           publish-dir: './apps/admin/.next'
@@ -78,7 +96,7 @@ jobs:
         continue-on-error: true
 
       - name: Deploy to GitHub Pages (fallback)
-        if: ${{ secrets.VERCEL_TOKEN == '' && secrets.NETLIFY_AUTH_TOKEN == '' }}
+        if: steps.check-vercel.outputs.has_vercel == 'false' && steps.check-netlify.outputs.has_netlify == 'false'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -90,11 +108,12 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const environment = '${{ github.event.inputs.environment }}' || 'production';
             github.rest.repos.createDeploymentStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
               deployment_id: context.payload.deployment?.id || 0,
               state: 'success',
-              environment: '${{ github.event.inputs.environment || "production" }}',
+              environment: environment,
               description: 'Admin dashboard deployed successfully'
             })
