@@ -24,8 +24,10 @@ jobs:
     name: Deploy Mobile Web App
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write  # Required for GitHub Pages deployment
       deployments: write
+      pages: write     # Required for GitHub Pages
+      id-token: write  # Required for GitHub Pages
     
     steps:
       - name: Checkout code
@@ -120,6 +122,8 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./apps/mobile/dist
           cname: mobile.wats.tz
+          force_orphan: true
+          keep_files: false
         continue-on-error: true
 
       - name: Create deployment status
