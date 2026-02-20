@@ -1,0 +1,6 @@
+{
+  "name": "wats-monorepo",
+  "private": true,
+  "description": "WATS monorepo root – package manager detection for CI (npm). Apps: apps/admin, apps/mobile.",
+  "packageManager": "npm@10.2.0"
+}
