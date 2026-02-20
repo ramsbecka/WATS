@@ -38,7 +38,9 @@
     },
     "owner": "ramsbecka",
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/icon.jpg"
     }
   }
 }

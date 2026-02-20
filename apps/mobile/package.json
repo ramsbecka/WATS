@@ -11,7 +11,9 @@
     "build:android:apk": "npx expo prebuild --platform android --clean && cd android && (if exist gradlew.bat (call gradlew.bat assembleRelease) else (./gradlew assembleRelease)) && cd ..",
     "build:android:aab": "npx expo prebuild --platform android --clean && cd android && (if exist gradlew.bat (call gradlew.bat bundleRelease) else (./gradlew bundleRelease)) && cd ..",
     "build:eas:apk": "eas build --platform android --profile preview --local",
-    "build:eas:aab": "eas build --platform android --profile production --local"
+    "build:eas:aab": "eas build --platform android --profile production --local",
+    "build:web": "expo export --platform web",
+    "build:web:local": "expo export --platform web --output-dir dist"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

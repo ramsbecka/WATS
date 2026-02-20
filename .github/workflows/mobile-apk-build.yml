@@ -15,7 +15,7 @@ on:
       release_type:
         description: 'Release type'
         required: true
-        default: 'development'
+        default: 'preview'
         type: choice
         options:
           - development
@@ -26,15 +26,23 @@ on:
       - 'v*'
     branches:
       - main
+    paths:
+      - 'apps/mobile/**'
+      - '.github/workflows/mobile-apk-build.yml'
   pull_request:
     branches:
       - main
+    paths:
+      - 'apps/mobile/**'
 
 jobs:
   build-apk:
     name: Build Android APK
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.event.inputs.build_type, 'apk'))
+    if: |
+      github.event_name == 'workflow_dispatch' || 
+      (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
+      (github.event_name == 'pull_request' && contains(github.event.inputs.build_type, 'apk'))
     
     steps:
       - name: Checkout code
@@ -83,33 +91,84 @@ jobs:
       - name: Check Expo token
         id: check-expo-token
         run: |
-          if [ -n "${{ secrets.EXPO_TOKEN }}" ]; then
-            echo "has_expo_token=true" >> $GITHUB_OUTPUT
-          else
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "❌ EXPO_TOKEN secret haipo! Weka kwenye GitHub Secrets kwa automated builds."
             echo "has_expo_token=false" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "✅ EXPO_TOKEN iko sawa"
+            echo "has_expo_token=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Login to Expo (if token provided)
+      - name: Setup Expo authentication
         if: steps.check-expo-token.outputs.has_expo_token == 'true'
-        working-directory: apps/mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          eas login --non-interactive --token ${{ secrets.EXPO_TOKEN }}
+          echo "✅ EXPO_TOKEN ime-set kwa authentication"
+          # EAS CLI ita-detect EXPO_TOKEN automatically - hakuna haja ya eas login
 
-      - name: Build APK with EAS (if token provided)
+      - name: Determine build profile
+        id: build-profile
+        run: |
+          if [[ "${{ startsWith(github.ref, 'refs/tags/v') }}" == "true" ]]; then
+            echo "profile=production" >> $GITHUB_OUTPUT
+            echo "build_type=app-bundle" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "profile=preview" >> $GITHUB_OUTPUT
+            echo "build_type=apk" >> $GITHUB_OUTPUT
+          else
+            echo "profile=${{ github.event.inputs.release_type || 'preview' }}" >> $GITHUB_OUTPUT
+            echo "build_type=apk" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build APK/AAB with EAS on Expo.dev
         if: steps.check-expo-token.outputs.has_expo_token == 'true'
+        id: eas-build
         working-directory: apps/mobile
         env:
-          EAS_BUILD_PROFILE: ${{ github.event.inputs.release_type || 'development' }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EAS_BUILD_PROFILE: ${{ steps.build-profile.outputs.profile }}
         run: |
-          eas build --platform android --profile ${{ github.event.inputs.release_type || 'development' }} --non-interactive --no-wait
+          echo "🚀 Building ${{ steps.build-profile.outputs.build_type }} kwenye Expo.dev..."
+          echo "📦 Profile: ${{ steps.build-profile.outputs.profile }}"
+          echo "🔗 Build ita-endelea kwenye: https://expo.dev/accounts/ramsbecka/projects/wats/builds"
+          
+          # Trigger build na capture output
+          BUILD_OUTPUT=$(eas build --platform android --profile ${{ steps.build-profile.outputs.profile }} --non-interactive --no-wait 2>&1 || true)
+          echo "$BUILD_OUTPUT"
+          
+          # Extract build URL kama ipo
+          BUILD_URL=$(echo "$BUILD_OUTPUT" | grep -oP 'https://expo.dev/[^\s]+' | head -1 || echo "")
+          if [ -n "$BUILD_URL" ]; then
+            echo "build_url=$BUILD_URL" >> $GITHUB_OUTPUT
+            echo "✅ Build URL: $BUILD_URL"
+          fi
+          
+          echo "✅ Build ime-trigger kwenye Expo.dev!"
+          echo "📱 Angalia status kwenye: https://expo.dev/accounts/ramsbecka/projects/wats/builds"
 
-      - name: Build APK locally (fallback)
+      - name: Comment build status on PR
+        if: github.event_name == 'pull_request' && steps.eas-build.outputs.build_url != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const buildUrl = '${{ steps.eas-build.outputs.build_url }}';
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 **EAS Build ime-trigger!**\n\n📱 Angalia build status: ${buildUrl}\n\nBuild ita-endelea kwenye Expo.dev servers.`
+            });
+
+      - name: Build APK locally (fallback - ikiwa EXPO_TOKEN haipo)
         if: steps.check-expo-token.outputs.has_expo_token == 'false'
         working-directory: apps/mobile
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
           PATH: ${{ env.PATH }}
         run: |
+          echo "⚠️ Building locally kwa sababu EXPO_TOKEN haipo"
           npx expo prebuild --platform android --clean
           cd android
           ./gradlew assembleRelease
@@ -204,19 +263,35 @@ jobs:
             echo "has_expo_token=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Login to Expo
+      - name: Setup Expo authentication
         if: steps.check-expo-token-aab.outputs.has_expo_token == 'true'
-        working-directory: apps/mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          eas login --non-interactive --token ${{ secrets.EXPO_TOKEN }}
+          echo "✅ EXPO_TOKEN ime-set kwa authentication"
+          # EAS CLI ita-detect EXPO_TOKEN automatically - hakuna haja ya eas login
 
-      - name: Build AAB with EAS
+      - name: Determine AAB build profile
+        id: build-profile-aab
+        run: |
+          if [[ "${{ startsWith(github.ref, 'refs/tags/v') }}" == "true" ]]; then
+            echo "profile=production" >> $GITHUB_OUTPUT
+          else
+            echo "profile=${{ github.event.inputs.release_type || 'production' }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build AAB with EAS on Expo.dev
         if: steps.check-expo-token-aab.outputs.has_expo_token == 'true'
         working-directory: apps/mobile
         env:
-          EAS_BUILD_PROFILE: ${{ github.event.inputs.release_type || 'production' }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EAS_BUILD_PROFILE: ${{ steps.build-profile-aab.outputs.profile }}
         run: |
-          eas build --platform android --profile ${{ github.event.inputs.release_type || 'production' }} --non-interactive --no-wait
+          echo "🚀 Building AAB kwenye Expo.dev..."
+          echo "📦 Profile: ${{ steps.build-profile-aab.outputs.profile }}"
+          echo "🔗 Build ita-endelea kwenye: https://expo.dev/accounts/ramsbecka/projects/wats/builds"
+          eas build --platform android --profile ${{ steps.build-profile-aab.outputs.profile }} --non-interactive --no-wait
+          echo "✅ Build ime-trigger kwenye Expo.dev! Angalia status kwenye dashboard."
 
       - name: Build AAB locally (fallback)
         if: steps.check-expo-token-aab.outputs.has_expo_token == 'false'
