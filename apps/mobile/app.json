@@ -41,6 +41,10 @@
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/icon.jpg"
+    },
+    "expo-router": {
+      "origin": false,
+      "unstable_ssr": false
     }
   }
 }
