@@ -82,8 +82,8 @@ export default function Orders() {
       <View style={styles.headerContent}>
         <Ionicons name="receipt" size={24} color={colors.primary} />
         <View>
-          <Text style={styles.title}>Maagizo Yangu</Text>
-          <Text style={styles.subtitle}>Historia ya maagizo yako</Text>
+          <Text style={styles.title}>My Orders</Text>
+          <Text style={styles.subtitle}>Your order history</Text>
         </View>
       </View>
     </View>

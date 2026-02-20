@@ -15,6 +15,8 @@ supabase login
 supabase link --project-ref YOUR_PROJECT_REF
 supabase functions deploy checkout-initiate
 supabase functions deploy payment-webhook
+supabase functions deploy payment-retry
+supabase functions deploy payment-verify
 supabase functions list
 ```
 
@@ -26,7 +28,9 @@ Replace `YOUR_PROJECT_REF` with your Supabase project ID (from the project URL).
 2. **Link project:** `supabase link --project-ref <ref>` from repo root.
 3. **Deploy:**  
    `supabase functions deploy checkout-initiate`  
-   `supabase functions deploy payment-webhook`
+   `supabase functions deploy payment-webhook`  
+   `supabase functions deploy payment-retry`  
+   `supabase functions deploy payment-verify`
 4. **Secrets:** Set M-Pesa and other secrets in Supabase Dashboard → Settings → Edge Functions → Secrets.
 
 ## Verify

@@ -68,7 +68,7 @@ export default function Checkout() {
     }
     setVoucherError('');
     try {
-      const voucher = await verifyVoucherCode(voucherCode.trim());
+      const voucher = await verifyVoucherCode(voucherCode.trim(), user?.id);
       const subtotal = total();
       if (subtotal < Number(voucher.min_order_amount_tzs || 0)) {
         setVoucherError(`Minimum order amount: ${Number(voucher.min_order_amount_tzs).toLocaleString()} TSh`);

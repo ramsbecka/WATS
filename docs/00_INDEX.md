@@ -17,6 +17,16 @@
 
 ---
 
+## Orodha ya kumbukumbu / operesheni
+
+| File | Yaliyomo |
+|------|----------|
+| [PAYMENT_FLOW.md](./PAYMENT_FLOW.md) | Flow kamili ya malipo: Mobile → checkout-initiate → M-Pesa STK → payment-webhook → Admin |
+| [DATA_FLOW_AND_SECURITY.md](./DATA_FLOW_AND_SECURITY.md) | Data flow admin ↔ mobile, usalama, admin leads mobile (realtime) |
+| [DEPLOY_EDGE_FUNCTIONS.md](./DEPLOY_EDGE_FUNCTIONS.md) | Deploy checkout-initiate, payment-webhook, payment-retry, payment-verify |
+
+---
+
 ## Baada ya kukubaliana na docs
 
 Ujenzi unafuata kwa mpangilio ufuatao: **A** Database → **B** Edge Functions → **C** React Native → **D** Figma/tokens → **E** Admin → **F** API spec final → **G** Tests → **H** Deployment → **I** README.

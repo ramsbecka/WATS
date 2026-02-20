@@ -245,7 +245,9 @@ Deno.serve(async (req) => {
       .select(`
         product_id,
         quantity,
-        products ( id, price_tzs, vendor_id, name_sw )
+        variant_id,
+        products ( id, price_tzs, vendor_id, name_sw ),
+        product_variants ( price_tzs )
       `)
       .eq('cart_id', cart.id);
     if (!items?.length) {
@@ -256,12 +258,13 @@ Deno.serve(async (req) => {
     }
 
     let subtotal = 0;
-    const orderItems: { product_id: string; vendor_id: string; quantity: number; unit_price_tzs: number; total_tzs: number }[] = [];
+    const orderItems: { product_id: string; vendor_id: string; quantity: number; unit_price_tzs: number; total_tzs: number; variant_id: string | null }[] = [];
     for (const row of items as any[]) {
       const product = row.products;
       if (!product) continue;
       const qty = row.quantity;
-      const unitPrice = Number(product.price_tzs);
+      const variantPrice = row.product_variants?.price_tzs != null ? Number(row.product_variants.price_tzs) : null;
+      const unitPrice = variantPrice ?? Number(product.price_tzs);
       const total = unitPrice * qty;
       subtotal += total;
       orderItems.push({
@@ -270,6 +273,7 @@ Deno.serve(async (req) => {
         quantity: qty,
         unit_price_tzs: unitPrice,
         total_tzs: total,
+        variant_id: row.variant_id ?? null,
       });
     }
     
@@ -279,8 +283,9 @@ Deno.serve(async (req) => {
     if (voucher_code) {
       const { data: voucher } = await supabase
         .from('vouchers')
-        .select('id, discount_percentage, discount_amount_tzs, min_order_amount_tzs, max_discount_amount_tzs, usage_count, max_usage')
-        .eq('code', voucher_code.toUpperCase())
+        .select('id, user_id, discount_percentage, discount_amount_tzs, min_order_amount_tzs, max_discount_amount_tzs, usage_count, max_usage')
+        .eq('code', voucher_code.toUpperCase().trim())
+        .eq('user_id', user.id)
         .eq('is_used', false)
         .gte('valid_until', new Date().toISOString())
         .single();
@@ -327,7 +332,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Order items
+    // Order items (include variant_id so admin and mobile see correct line item)
     await supabase.from('order_items').insert(
       orderItems.map((oi) => ({
         order_id: order.id,
@@ -336,6 +341,7 @@ Deno.serve(async (req) => {
         quantity: oi.quantity,
         unit_price_tzs: oi.unit_price_tzs,
         total_tzs: oi.total_tzs,
+        variant_id: oi.variant_id || null,
       }))
     );
 

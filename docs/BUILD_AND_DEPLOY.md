@@ -1,60 +1,60 @@
-# WATS - Build na Deploy Guide
+# WATS - Build and Deploy Guide
 
-Mwongozo kamili wa jinsi ya kutengeneza APK kwa mobile app na kudeploy admin dashboard.
+Complete guide for building the mobile app APK and deploying the admin dashboard.
 
 ---
 
-## ✅ Deploy readiness – tunaweza kudeploy?
+## ✅ Deploy readiness – can we deploy?
 
-| Sehemu | Build inakwenda? | Deploy inahitaji nini? |
-|--------|-------------------|-------------------------|
-| **Admin (Next.js)** | Ndiyo – `npm run build` inakwenda | **Vercel:** weka GitHub Secrets: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`. **Netlify:** `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`. **GitHub Pages:** haifanyi kazi na config ya sasa (standalone); ikiwa unataka GH Pages, badilisha `next.config.mjs` kuwa `output: 'export'` na jenga tena. |
-| **Mobile (Expo)** | Ndiyo – EAS / local build | **EAS (cloud):** weka GitHub Secrets: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `EXPO_TOKEN`. **Local APK/AAB:** `cd apps/mobile` → `npx expo prebuild --platform android --clean` → Gradle build (tazama chini). |
-| **Supabase** | Migrations + Edge Functions | `supabase link` → `supabase db push` (migrations); `supabase functions deploy <name>` (functions). Weka secrets kwenye Dashboard. |
+| Part | Build works? | What deploy needs |
+|------|----------------|---------------------|
+| **Admin (Next.js)** | Yes – `npm run build` works | **Vercel:** set GitHub Secrets: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`. **Netlify:** `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`. **GitHub Pages:** does not work with current config (standalone); if you want GH Pages, change `next.config.mjs` to `output: 'export'` and rebuild. |
+| **Mobile (Expo)** | Yes – EAS / local build | **EAS (cloud):** set GitHub Secrets: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `EXPO_TOKEN`. **Local APK/AAB:** `cd apps/mobile` → `npx expo prebuild --platform android --clean` → Gradle build (see below). |
+| **Supabase** | Migrations + Edge Functions | `supabase link` → `supabase db push` (migrations); `supabase functions deploy <name>` (functions). Set secrets in Dashboard. |
 
-**Hitimisho:** Tunaweza kudeploy ikiwa umeweka GitHub Secrets kwa platform unayotumia (Vercel/Netlify kwa admin, EAS kwa mobile) na Supabase iko linked na deployed.
+**Summary:** You can deploy once GitHub Secrets are set for your platform (Vercel/Netlify for admin, EAS for mobile) and Supabase is linked and deployed.
 
 ---
 
 ## 📱 Mobile App - APK Build
 
-### Njia ya 1: Kwa kutumia GitHub Actions (Automated)
+### Method 1: Using GitHub Actions (Automated)
 
 #### Setup
 
-1. **Weka GitHub Secrets:**
-   - Nenda GitHub Repository → Settings → Secrets and variables → Actions
-   - Ongeza secrets zifuatazo:
+1. **Set GitHub Secrets:**
+   - Go to GitHub Repository → Settings → Secrets and variables → Actions
+   - Add the following secrets:
 
    ```
    EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    EXPO_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
-   EXPO_TOKEN=your_expo_token_here (optional, kwa EAS Build)
+   EXPO_TOKEN=your_expo_token_here (optional, for EAS Build)
    ```
 
-2. **Jinsi ya kupata Expo Token:**
+2. **How to get Expo Token:**
    ```bash
    npm install -g eas-cli
    eas login
    eas whoami
-   # Copy token kutoka Expo dashboard au kwa command:
+   # Copy token from Expo dashboard or run:
    eas token:create
    ```
 
 3. **Trigger Build:**
-   - Nenda GitHub → Actions → "Build Mobile APK"
+   - Go to GitHub → Actions → "Build Mobile APK"
    - Click "Run workflow"
-   - Chagua build type (apk, aab, au both)
-   - Chagua release type (development, preview, au production)
+   - Choose build type (apk, aab, or both)
+   - Choose release type (development, preview, or production)
    - Click "Run workflow"
 
 4. **Download APK:**
-   - Baada ya build kukamilika, nenda kwenye workflow run
-   - Download APK kutoka "Artifacts" section
+   - After the build completes, go to the workflow run
+   - Download APK from the "Artifacts" section
 
 ---
 
-### Njia ya 2: Local Build (Manual)
+### Method 2: Local Build (Manual)
 
 #### Requirements
 
@@ -94,21 +94,21 @@ Mwongozo kamili wa jinsi ya kutengeneza APK kwa mobile app na kudeploy admin das
    android/app/build/outputs/apk/release/app-release.apk
    ```
 
-#### Build AAB (kwa Google Play Store)
+#### Build AAB (for Google Play Store)
 
 ```bash
 cd android
 ./gradlew bundleRelease
 ```
 
-AAB file itakuwa:
+AAB file will be at:
 ```
 android/app/build/outputs/bundle/release/app-release.aab
 ```
 
 ---
 
-### Njia ya 3: EAS Build (Expo Application Services)
+### Method 3: EAS Build (Expo Application Services)
 
 #### Setup EAS
 
@@ -172,11 +172,11 @@ android/app/build/outputs/bundle/release/app-release.aab
 
 ## 🖥️ Admin Dashboard - Deployment
 
-### Njia ya 1: Deploy kwa Vercel (Recommended)
+### Method 1: Deploy to Vercel (Recommended)
 
 #### Setup
 
-1. **Weka GitHub Secrets:**
+1. **Set GitHub Secrets:**
    ```
    VERCEL_TOKEN=your_vercel_token
    VERCEL_ORG_ID=your_org_id
@@ -185,31 +185,31 @@ android/app/build/outputs/bundle/release/app-release.aab
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
    ```
 
-2. **Jinsi ya kupata Vercel credentials:**
-   - Nenda https://vercel.com
-   - Login na GitHub account yako
-   - Nenda Settings → Tokens
-   - Create token mpya
-   - Link project yako kwa Vercel
-   - Copy Org ID na Project ID kutoka project settings
+2. **How to get Vercel credentials:**
+   - Go to https://vercel.com
+   - Log in with your GitHub account
+   - Go to Settings → Tokens
+   - Create a new token
+   - Link your project to Vercel
+   - Copy Org ID and Project ID from project settings
 
 3. **Automatic Deployment:**
-   - Push changes kwa `main` branch
-   - GitHub Actions ita-deploy automatically
+   - Push changes to `main` branch
+   - GitHub Actions will deploy automatically
 
 4. **Manual Deployment:**
-   - Nenda GitHub → Actions → "Deploy Admin Dashboard"
+   - Go to GitHub → Actions → "Deploy Admin Dashboard"
    - Click "Run workflow"
-   - Chagua environment
+   - Choose environment
    - Click "Run workflow"
 
 ---
 
-### Njia ya 2: Deploy kwa Netlify
+### Method 2: Deploy to Netlify
 
 #### Setup
 
-1. **Weka GitHub Secrets:**
+1. **Set GitHub Secrets:**
    ```
    NETLIFY_AUTH_TOKEN=your_netlify_token
    NETLIFY_SITE_ID=your_site_id
@@ -217,27 +217,27 @@ android/app/build/outputs/bundle/release/app-release.aab
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
    ```
 
-2. **Jinsi ya kupata Netlify credentials:**
-   - Nenda https://app.netlify.com
-   - Login na GitHub account yako
-   - Nenda User settings → Applications → New access token
-   - Create token mpya
-   - Link site yako
-   - Copy Site ID kutoka site settings
+2. **How to get Netlify credentials:**
+   - Go to https://app.netlify.com
+   - Log in with your GitHub account
+   - Go to User settings → Applications → New access token
+   - Create a new token
+   - Link your site
+   - Copy Site ID from site settings
 
 3. **Update Next.js config:**
    ```javascript
    // apps/admin/next.config.js
    module.exports = {
-     output: 'export', // Kwa static export
-     // au
-     // output: 'standalone', // Kwa server-side
+     output: 'export', // For static export
+     // or
+     // output: 'standalone', // For server-side
    }
    ```
 
 ---
 
-### Njia ya 3: Deploy kwa GitHub Pages
+### Method 3: Deploy to GitHub Pages
 
 #### Setup
 
@@ -246,23 +246,23 @@ android/app/build/outputs/bundle/release/app-release.aab
    // apps/admin/next.config.js
    module.exports = {
      output: 'export',
-     basePath: '/WATS', // Kama repo name ni WATS
+     basePath: '/WATS', // If repo name is WATS
      assetPrefix: '/WATS/',
    }
    ```
 
-2. **Build na Deploy:**
-   - GitHub Actions ita-deploy automatically kama fallback
-   - Au manually:
+2. **Build and Deploy:**
+   - GitHub Actions will deploy automatically as fallback
+   - Or manually:
      ```bash
      cd apps/admin
      npm run build
-     # Deploy out/ folder kwa GitHub Pages
+     # Deploy out/ folder to GitHub Pages
      ```
 
 ---
 
-### Njia ya 4: Manual Deployment
+### Method 4: Manual Deployment
 
 #### Build locally
 
@@ -272,14 +272,14 @@ npm install
 npm run build
 ```
 
-#### Deploy kwa server yako
+#### Deploy to your server
 
 1. **Copy files:**
    ```bash
-   # Kwa static export
+   # For static export
    scp -r apps/admin/out/* user@server:/var/www/admin/
    
-   # Kwa server-side
+   # For server-side
    scp -r apps/admin/.next/* user@server:/var/www/admin/
    ```
 
@@ -320,21 +320,21 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
 
 ## 📋 Checklist
 
-### Kabla ya Build APK:
+### Before building APK:
 
-- [ ] Environment variables zimewekwa
-- [ ] App.json imesasishwa (version, package name, etc.)
-- [ ] Assets zote zipo (icon.png, splash.png, etc.)
-- [ ] Dependencies zote zime-install
-- [ ] App ina-test locally na expo start
+- [ ] Environment variables are set
+- [ ] app.json is updated (version, package name, etc.)
+- [ ] All assets are present (icon.png, splash.png, etc.)
+- [ ] All dependencies are installed
+- [ ] App is tested locally with expo start
 
-### Kabla ya Deploy Admin:
+### Before deploying Admin:
 
-- [ ] Environment variables zimewekwa
-- [ ] Next.js config imesasishwa
-- [ ] Build ina-success locally (`npm run build`)
-- [ ] GitHub Secrets zimewekwa
-- [ ] Deployment platform ime-setup (Vercel/Netlify)
+- [ ] Environment variables are set
+- [ ] Next.js config is updated
+- [ ] Build succeeds locally (`npm run build`)
+- [ ] GitHub Secrets are set
+- [ ] Deployment platform is set up (Vercel/Netlify)
 
 ---
 
@@ -343,26 +343,26 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
 ### APK Build Issues
 
 **Problem: "Gradle build failed"**
-- Solution: Hakikisha Java JDK 17 ime-install
+- Solution: Ensure Java JDK 17 is installed
 - Check: `java -version`
 
 **Problem: "Android SDK not found"**
-- Solution: Install Android Studio na setup Android SDK
+- Solution: Install Android Studio and set up Android SDK
 - Set ANDROID_HOME environment variable
 
 **Problem: "Expo prebuild failed"**
-- Solution: Delete `android/` folder na try again
+- Solution: Delete `android/` folder and try again
 - Run: `npx expo prebuild --platform android --clean`
 
 ### Admin Deployment Issues
 
 **Problem: "Build failed on Vercel"**
-- Solution: Check build logs kwenye Vercel dashboard
-- Verify environment variables zimewekwa
+- Solution: Check build logs in Vercel dashboard
+- Verify environment variables are set
 
 **Problem: "404 errors on GitHub Pages"**
-- Solution: Update `basePath` kwenye next.config.js
-- Verify `output: 'export'` imewekwa
+- Solution: Update `basePath` in next.config.js
+- Verify `output: 'export'` is set
 
 ---
 
@@ -378,12 +378,12 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
 
 ## 💡 Tips
 
-1. **APK Size:** Tumia `--minify` flag kwa kuboresha APK size
-2. **Build Time:** EAS Build ni faster kuliko local build
-3. **Testing:** Test APK kwenye device halisi kabla ya ku-release
-4. **Versioning:** Update version kwenye app.json kabla ya build
-5. **Signing:** Setup keystore kwa production builds
+1. **APK Size:** Use `--minify` flag to reduce APK size
+2. **Build Time:** EAS Build is faster than local build
+3. **Testing:** Test APK on a real device before release
+4. **Versioning:** Update version in app.json before building
+5. **Signing:** Set up keystore for production builds
 
 ---
 
-**Hitimisho:** Fuata mwongozo huu kwa makini, na APK na admin dashboard zita-build na deploy kwa mafanikio!
+**Summary:** Follow this guide carefully and the APK and admin dashboard will build and deploy successfully.

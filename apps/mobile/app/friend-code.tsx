@@ -91,7 +91,7 @@ export default function FriendCode() {
         </Pressable>
         <View style={styles.headerContent}>
           <Ionicons name="people" size={24} color={colors.primary} />
-          <Text style={styles.title}>Nambari ya Rafiki</Text>
+          <Text style={styles.title}>Friend's Code</Text>
         </View>
         <View style={styles.placeholder} />
       </View>
@@ -101,7 +101,7 @@ export default function FriendCode() {
           <View style={styles.descriptionContainer}>
             <Ionicons name="gift-outline" size={24} color={colors.primary} />
             <Text style={styles.description}>
-              Ingiza nambari ya rafiki yako ili upate alama za ziada unapojisajili au kufanya ununuzi wako wa kwanza.
+              Enter your friend's referral code to earn bonus points when you register or make your first purchase.
             </Text>
           </View>
 
@@ -123,13 +123,13 @@ export default function FriendCode() {
           {verified && (
             <View style={styles.successBadge}>
               <Ionicons name="checkmark-circle" size={22} color={colors.success} />
-              <Text style={styles.successText}>Nambari imethibitishwa</Text>
+              <Text style={styles.successText}>Code verified</Text>
             </View>
           )}
 
           <View style={styles.actions}>
             <Button
-              title="Thibitisha Nambari"
+              title="Verify Code"
               onPress={handleVerify}
               loading={loading && !verified}
               variant="outline"
@@ -137,7 +137,7 @@ export default function FriendCode() {
             />
             {verified && (
               <Button
-                title="Tumia Nambari"
+                title="Apply Code"
                 onPress={handleApply}
                 loading={loading && verified}
                 style={styles.applyBtn}
@@ -150,12 +150,12 @@ export default function FriendCode() {
           <View style={styles.infoRow}>
             <Ionicons name="information-circle" size={28} color={colors.primary} />
             <View style={styles.infoText}>
-              <Text style={styles.infoTitle}>Jinsi Inavyofanya Kazi</Text>
+              <Text style={styles.infoTitle}>How It Works</Text>
               <Text style={styles.infoDescription}>
-                • Ingiza nambari ya rafiki yako{'\n'}
-                • Thibitisha nambari ni halali{'\n'}
-                • Tumia ili upate alama za ziada{'\n'}
-                • Rafiki yako pia atapata alama za ziada!
+                • Enter your friend's referral code{'\n'}
+                • Verify the code is valid{'\n'}
+                • Apply to earn bonus points{'\n'}
+                • Your friend earns bonus points too!
               </Text>
             </View>
           </View>

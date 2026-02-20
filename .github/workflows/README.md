@@ -1,35 +1,35 @@
 # GitHub Actions Workflows
 
-Hii ni maelezo ya workflows zote za GitHub Actions kwenye mradi huu.
+This document describes all GitHub Actions workflows in this project.
 
 ## 📱 Mobile APK Build Workflow
 
 **File:** `.github/workflows/mobile-apk-build.yml`
 
-### Jinsi ya kutumia:
+### How to use:
 
 1. **Automatic (on push to main):**
-   - Push code kwa `main` branch
-   - Workflow ita-run automatically
+   - Push code to `main` branch
+   - Workflow runs automatically
 
 2. **Manual trigger:**
-   - Nenda GitHub → Actions → "Build Mobile APK"
+   - Go to GitHub → Actions → "Build Mobile APK"
    - Click "Run workflow"
-   - Chagua options:
-     - **Build type:** apk, aab, au both
-     - **Release type:** development, preview, au production
+   - Choose options:
+     - **Build type:** apk, aab, or both
+     - **Release type:** development, preview, or production
 
 ### Requirements:
 
 - GitHub Secrets:
   - `EXPO_PUBLIC_SUPABASE_URL`
   - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-  - `EXPO_TOKEN` (optional, kwa EAS Build)
+  - `EXPO_TOKEN` (optional, for EAS Build)
 
 ### Output:
 
-- APK/AAB files zita-upload kama artifacts
-- Kwa tags (v*), release ita-create automatically
+- APK/AAB files are uploaded as artifacts
+- For tags (v*), a release is created automatically
 
 ---
 
@@ -37,16 +37,16 @@ Hii ni maelezo ya workflows zote za GitHub Actions kwenye mradi huu.
 
 **File:** `.github/workflows/admin-deploy.yml`
 
-### Jinsi ya kutumia:
+### How to use:
 
 1. **Automatic (on push to main):**
-   - Push changes kwa `main` branch
-   - Workflow ita-deploy automatically
+   - Push changes to `main` branch
+   - Workflow deploys automatically
 
 2. **Manual trigger:**
-   - Nenda GitHub → Actions → "Deploy Admin Dashboard"
+   - Go to GitHub → Actions → "Deploy Admin Dashboard"
    - Click "Run workflow"
-   - Chagua environment: production, preview, au staging
+   - Choose environment: production, preview, or staging
 
 ### Deployment Platforms:
 
@@ -57,7 +57,7 @@ Hii ni maelezo ya workflows zote za GitHub Actions kwenye mradi huu.
    - Requires: `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`
 
 3. **GitHub Pages** (Fallback)
-   - Automatic kama Vercel/Netlify hazipo
+   - Automatic if Vercel/Netlify are not configured
 
 ### Requirements:
 
@@ -72,13 +72,13 @@ Hii ni maelezo ya workflows zote za GitHub Actions kwenye mradi huu.
 
 **File:** `.github/workflows/ci.yml`
 
-### Jinsi ya kutumia:
+### How to use:
 
-- Automatic on push/PR kwa `main` au `develop` branches
-- Runs tests na builds kwa admin na mobile apps
+- Automatic on push/PR to `main` or `develop` branches
+- Runs tests and builds for admin and mobile apps
 
 ---
 
 ## 📝 Setup Instructions
 
-Tazama `docs/BUILD_AND_DEPLOY.md` kwa maelezo kamili ya setup.
+See `docs/BUILD_AND_DEPLOY.md` for full setup details.

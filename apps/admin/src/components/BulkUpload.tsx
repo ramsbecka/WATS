@@ -75,10 +75,10 @@ export default function BulkUpload() {
   return (
     <div>
       <h1 className="text-2xl font-bold tracking-tight text-slate-900">Bulk upload products</h1>
-      <p className="mt-1 text-sm text-slate-500">Pakia bidhaa nyingi kwa duka moja (JSON)</p>
+      <p className="mt-1 text-sm text-slate-500">Upload multiple products for one store (JSON)</p>
       <div className="mt-6 max-w-2xl space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div>
-          <label htmlFor="vendor" className="block text-sm font-medium text-slate-700">Duka</label>
+          <label htmlFor="vendor" className="block text-sm font-medium text-slate-700">Store</label>
           <select
             id="vendor"
             value={vendorId}

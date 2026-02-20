@@ -17,7 +17,10 @@ Orodha kamili na order ya kusoma: **[docs/00_INDEX.md](docs/00_INDEX.md)**.
 - **03_DATABASE_SPEC.md** – schema design, RLS (kubuni)  
 - **04_API_CONTRACT.md** – endpoints, payloads, roles  
 - **05_DESIGN_SYSTEM_AND_FIGMA.md** – UI/UX, Figma prompt, tokens  
-- **06_DELIVERABLES_AND_ORDER.md** – matoleo na mpangilio wa ujenzi (A→I)
+- **06_DELIVERABLES_AND_ORDER.md** – matoleo na mpangilio wa ujenzi (A→I)  
+- **PAYMENT_FLOW.md** – flow kamili ya malipo: Mobile → M-Pesa → payment-webhook → Admin  
+- **DATA_FLOW_AND_SECURITY.md** – data flow admin ↔ mobile, usalama, admin leads mobile  
+- **DEPLOY_EDGE_FUNCTIONS.md** – deploy checkout-initiate, payment-webhook, payment-retry
 
 ---
 
@@ -27,7 +30,7 @@ Orodha kamili na order ya kusoma: **[docs/00_INDEX.md](docs/00_INDEX.md)**.
 WATS/
 ├── supabase/
 │   ├── migrations/          # SQL schema + RLS
-│   ├── functions/           # Edge Functions (checkout, webhook)
+│   ├── functions/           # Edge Functions (checkout-initiate, payment-webhook, payment-retry, payment-verify)
 │   └── config.toml
 ├── apps/
 │   ├── mobile/              # React Native (Expo) – customer app
@@ -126,8 +129,11 @@ npm run dev
 - **Edge Functions:**  
   `supabase functions deploy checkout-initiate`  
   `supabase functions deploy payment-webhook`  
+  `supabase functions deploy payment-retry`  
+  `supabase functions deploy payment-verify`  
   `supabase functions deploy vendor-products-bulk-upload`  
-  Set secrets in Dashboard or `supabase secrets set KEY value`.
+  Set secrets in Dashboard or `supabase secrets set KEY value`.  
+  Full payment flow: **[docs/PAYMENT_FLOW.md](docs/PAYMENT_FLOW.md)**.
 
 ### Admin (Vercel / Netlify)
 - **Build command:** `cd apps/admin && npm install && npm run build`

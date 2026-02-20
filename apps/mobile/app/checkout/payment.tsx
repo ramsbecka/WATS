@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, typography } from '@/theme/tokens';
-import { initiateCheckout } from '@/api/client';
+import { retryPayment } from '@/api/client';
 
 export default function PaymentStatus() {
   const { orderId, orderNumber } = useLocalSearchParams<{ orderId?: string; orderNumber?: string }>();
@@ -160,24 +160,13 @@ export default function PaymentStatus() {
     if (!orderId) return;
     setRetrying(true);
     try {
-      // Get order details for retry
-      const { data: order } = await supabase
-        .from('orders')
-        .select('shipping_address, total_tzs')
-        .eq('id', orderId)
-        .single();
-
-      if (order) {
-        // Retry payment with new idempotency key
-        const result = await initiateCheckout({
-          shipping_address: order.shipping_address as any,
-          idempotency_key: `retry-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-          payment_provider: 'mpesa',
-        });
-        
-        // Update payment status
-        setPaymentStatus('initiated');
-        setLoading(true);
+      const result = await retryPayment(orderId);
+      setPaymentId(result.payment_id);
+      setPaymentStatus('initiated');
+      setLoading(true);
+      if (result.stk_push_failed) {
+        Alert.alert('Payment Request Failed', result.message || result.error || 'Failed to send M-Pesa request.');
+      } else {
         Alert.alert('Success', 'Payment request sent. Check your phone for M-Pesa prompt.');
       }
     } catch (e: any) {

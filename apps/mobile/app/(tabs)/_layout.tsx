@@ -14,9 +14,9 @@ export default function TabsLayout() {
   const isDesktopWeb = useIsDesktopWeb();
   const insets = useSafeAreaInsets();
 
-  // For mobile web and native, use bottom tabs
-  if (!isDesktopWeb) {
-    // Calculate tab bar padding kwa safe area - ku-ensure tabs ziko juu ya system navigation bar
+// For mobile web and native, use bottom tabs
+    if (!isDesktopWeb) {
+    // Tab bar padding for safe area so tabs sit above system navigation bar
     const tabBarPaddingBottom = Platform.OS === 'web' ? 8 : Math.max(insets.bottom, 8);
     
     return (

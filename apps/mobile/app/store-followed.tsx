@@ -85,7 +85,7 @@ export default function StoreFollowed() {
             <Ionicons name="storefront-outline" size={64} color={colors.textMuted} />
           </View>
           <Text style={styles.emptyTitle}>No followed stores</Text>
-          <Text style={styles.emptySubtitle}>Fuata maduka ili kupata arifa za bidhaa mpya</Text>
+          <Text style={styles.emptySubtitle}>Follow stores to get updates on new products</Text>
         </View>
       ) : (
         <FlatList

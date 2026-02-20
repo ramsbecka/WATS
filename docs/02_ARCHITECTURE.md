@@ -1,10 +1,10 @@
-# WATS – Architecture (Mbinu ya mfumo)
+# WATS – Architecture (System approach)
 
-Hii ni **document ya mjadala** ya mfumo: mbinu, vifaa na mtiririko wa data. Si code; ni maelezo na maamuzi ya kubuni.
+This is the **discussion document** for the system: approach, components and data flow. It is not code; it describes design decisions.
 
 ---
 
-## Mchoro wa mfumo (System overview)
+## System overview
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
@@ -29,75 +29,75 @@ Hii ni **document ya mjadala** ya mfumo: mbinu, vifaa na mtiririko wa data. Si c
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Wateja na Admin** wanatumia HTTPS na JWT (Supabase Auth).  
-- **Malipo** yanaanzishwa na server (Edge Function); provider inarudisha matokeo kwenye **webhook**.
+- **Customers and Admin** use HTTPS and JWT (Supabase Auth).  
+- **Payments** are initiated by the server (Edge Function); the provider returns results via **webhook**.
 
 ---
 
-## Mfumo wa utambulisho (Auth flow)
+## Auth flow
 
-1. Mtumiaji aingiza **nambari ya simu** → OTP inatumwa (Supabase Phone + Twilio au provider).  
-2. Mtumiaji anaingiza **OTP** → session inaundwa; profile (na simu) inaundwa/isasishwe.  
-3. **Simu** inabaki kwenye profile; checkout haihitaji kuingiza simu tena.  
-4. **Roles:** `customer` | `vendor` | `admin` – kwenye `profiles` na kuthibitishwa kwenye RLS na Edge Functions.
-
----
-
-## Mfumo wa malipo (Payment flow – critical)
-
-| Hatua | Kitendo |
-|-------|--------|
-| 1 | Mteja anabonyeza “Lipa” (checkout). |
-| 2 | Client anaitisha **Edge Function** (checkout-initiate) na: anwani, idempotency key. |
-| 3 | Edge Function: inathibitisha cart, inaunda **order** (pending) na **payment** (pending), inatumia **simu kutoka profile**. |
-| 4 | Edge Function inatuma **STK Push** kwa provider (M-Pesa / Airtel / n.k.). |
-| 5 | Provider inatumia **webhook** kwenye Edge Function (payment-webhook). |
-| 6 | Webhook inathibitisha **signature**, inasasisha payment na order, inaongeza notification na audit log. |
-| 7 | Fulfillment na arifa zinaweza kuanza (kwa order iliyothibitishwa). |
-
-**Kanuni:** Malipo server-side tu; idempotency; hakuna kuhifadhi data za kadi; webhook zina saini.
+1. User enters **phone number** → OTP is sent (Supabase Phone + Twilio or provider).  
+2. User enters **OTP** → session is created; profile (and phone) is created/updated.  
+3. **Phone** stays on profile; checkout does not ask for phone again.  
+4. **Roles:** `customer` | `vendor` | `admin` – on `profiles` and enforced in RLS and Edge Functions.
 
 ---
 
-## Database – mbinu (si SQL bado)
+## Payment flow (critical)
 
-- **PostgreSQL (Supabase)** – data kuu.  
-- **Jedwali kuu:** profiles, vendors, categories, products, product_images, inventory, carts, cart_items, orders, order_items, payments, shipments, fulfillment_centers, returns, loyalty_points, bnpl_orders, livestream_sessions, notifications, audit_logs.  
-- **RLS:** Kila jedwali lenye data nyeti kina policies: mtu anaona/kuandika data yake; vendor anaona bidhaa zake na ripoti; admin anaona kila kitu; payments na orders – owner na admin tu.  
-- **Indices na FKs:** Zitaainishwa kwenye Database Spec (schema design) kabla ya kuandika migrations.
+| Step | Action |
+|------|--------|
+| 1 | Customer taps “Pay” (checkout). |
+| 2 | Client calls **Edge Function** (checkout-initiate) with: address, idempotency key. |
+| 3 | Edge Function: validates cart, creates **order** (pending) and **payment** (pending), uses **phone from profile**. |
+| 4 | Edge Function sends **STK Push** to provider (M-Pesa / Airtel / etc.). |
+| 5 | Provider calls **webhook** on Edge Function (payment-webhook). |
+| 6 | Webhook verifies **signature**, updates payment and order, adds notification and audit log. |
+| 7 | Fulfillment and notifications can start (for confirmed order). |
+
+**Principles:** Payments server-side only; idempotency; no card data stored; webhooks are signed.
 
 ---
 
-## Edge Functions – jukumu
+## Database – approach (not SQL yet)
 
-| Function | Jukumu |
+- **PostgreSQL (Supabase)** – main data.  
+- **Main tables:** profiles, vendors, categories, products, product_images, inventory, carts, cart_items, orders, order_items, payments, shipments, fulfillment_centers, returns, loyalty_points, bnpl_orders, livestream_sessions, notifications, audit_logs.  
+- **RLS:** Each table with sensitive data has policies: user sees/writes own data; vendor sees own products and reports; admin sees all; payments and orders – owner and admin only.  
+- **Indices and FKs:** To be specified in Database Spec (schema design) before writing migrations.
+
+---
+
+## Edge Functions – role
+
+| Function | Role |
 |----------|--------|
 | **checkout-initiate** | Validate cart, create order + payment, trigger STK Push, handle idempotency key. |
 | **payment-webhook** | Verify signature/HMAC, update payment + order, notifications, audit log. |
 
-**Provider adapters:** M-Pesa, Airtel, Mixx, HaloPesa – tofauti zinaweza kufichwa kwenye adapters (kila provider ina adapter yake) ili webhook na STK logic iwe moja kwa mtiririko.
+**Provider adapters:** M-Pesa, Airtel, Mixx, HaloPesa – differences can be hidden in adapters (each provider has its adapter) so webhook and STK logic stay unified.
 
 ---
 
-## Usalama (Security – mbinu)
+## Security – approach
 
-- HTTPS kila mahali.  
-- Siri (API keys, webhook secrets) kwenye env vars – si kwenye code.  
-- Webhook: validation ya signature (HMAC-SHA256 au kile provider inatumia).  
-- Supabase: anon key kwa client; **service role** kwa Edge Functions tu (server-side).  
-- Nambari za simu kwenye UI: **mask** (e.g. 255****5678).  
-- Audit logs kwa malipo na payouts.
+- HTTPS everywhere.  
+- Secrets (API keys, webhook secrets) in env vars – not in code.  
+- Webhook: signature validation (HMAC-SHA256 or whatever the provider uses).  
+- Supabase: anon key for client; **service role** for Edge Functions only (server-side).  
+- Phone numbers in UI: **masked** (e.g. 255****5678).  
+- Audit logs for payments and payouts.
 
 ---
 
-## Observability na deployment (mbinu)
+## Observability and deployment – approach
 
-- **Majaribio:** Unit kwa payment flows; integration kwa order → payment → fulfillment.  
-- **Makosa:** Error tracking (e.g. Sentry).  
-- **Metrics:** Payment success rate, orders/day, fulfillment time; alerts kwa anomalies.  
+- **Tests:** Unit for payment flows; integration for order → payment → fulfillment.  
+- **Errors:** Error tracking (e.g. Sentry).  
+- **Metrics:** Payment success rate, orders/day, fulfillment time; alerts for anomalies.  
 - **CI/CD:** GitHub Actions; Supabase migrations + Edge deploy; Admin → Vercel/Netlify; Mobile → Expo EAS.  
-- **Env vars:** Zitaandikwa kwenye Deployment guide na .env.example.
+- **Env vars:** Documented in Deployment guide and .env.example.
 
 ---
 
-Hii architecture doc inatumika kwa **kujadili** na kuthibitisha mbinu kabla ya kuandika schema halisi, Edge Functions, na apps.
+This architecture doc is for **discussion** and to confirm the approach before writing the actual schema, Edge Functions, and apps.

@@ -2,22 +2,22 @@
 
 ## Summary
 
-Migrations zimeunganishwa kuwa **faili 6**. Schema kamili, RLS, storage, seed, helper functions, product variants system, reviews/returns system, na shipment tracking system ziko sawa na mradi.
+Migrations are consolidated into **6 files**. Full schema, RLS, storage, seed, helper functions, product variants system, reviews/returns system, and shipment tracking system match the project.
 
 ---
 
-## Mpangilio (6 migrations)
+## Layout (6 migrations)
 
-| # | File | Kazi |
+| # | File | Purpose |
 |---|------|------|
-| 1 | 20250212000001_01_complete_schema.sql | Schema kamili: profile/admin_profile, vendors (nullable), products, orders, RLS, storage buckets/policies, seed, handle_new_user trigger |
+| 1 | 20250212000001_01_complete_schema.sql | Full schema: profile/admin_profile, vendors (nullable), products, orders, RLS, storage buckets/policies, seed, handle_new_user trigger |
 | 2 | 20250212000002_02_helper_functions.sql | Helper functions: grant_admin_by_email() |
-| 3 | 20250212000003_03_fix_public_read_policies.sql | Rekebisha RLS: products/categories/images public read, storage public read kwa products, admin upload/update/delete kwa products |
+| 3 | 20250212000003_03_fix_public_read_policies.sql | Fix RLS: products/categories/images public read, storage public read for products, admin upload/update/delete for products |
 | 4 | 20250212000004_04_product_variants.sql | Product variants system: variant_attributes, variant_options, product_variants, variant_values tables, RLS, seed data (Size, Color) |
-| 5 | 20250212000005_05_reviews_returns.sql | Product reviews/ratings system na returns yenye comments/images: product_reviews, review_images, return_images tables, RLS, get_product_rating function |
+| 5 | 20250212000005_05_reviews_returns.sql | Product reviews/ratings system and returns with comments/images: product_reviews, review_images, return_images tables, RLS, get_product_rating function |
 | 6 | 20250212000006_06_shipment_tracking.sql | Shipment tracking system: shipment_tracking_events table, estimated_delivery_date field, auto-tracking trigger, RLS policies |
 
-**Kukimbiza:** `supabase db reset` (fresh) au `supabase db push` (project tayari linked).
+**To run:** `supabase db reset` (fresh) or `supabase db push` (project already linked).
 
 ---
 
@@ -27,7 +27,7 @@ Migrations zimeunganishwa kuwa **faili 6**. Schema kamili, RLS, storage, seed, h
 |-------|--------|-------|-----------|--------|
 | profile | ✓ | - | ✓ | ✓ (watumiaji: customer tu) |
 | admin_profile | - | ✓ | ✓ | ✓ (wasimamizi) |
-| vendors | - | ✓ | ✓ | ✓ (maduka – admin anaongeza/hariri, profile_id nullable) |
+| vendors | - | ✓ | ✓ | ✓ (stores – admin adds/edits, profile_id nullable) |
 | categories | ✓ | ✓ | - | ✓ |
 | products | ✓ | ✓ | ✓ | ✓ |
 | product_images | - | ✓ | ✓ | ✓ |
@@ -54,9 +54,9 @@ Migrations zimeunganishwa kuwa **faili 6**. Schema kamili, RLS, storage, seed, h
 
 ## Admin login
 
-- **Kuweka admin:** Supabase → SQL Editor:  
-  `SELECT public.grant_admin_by_email('email-yako@example.com');`  
-  (Ingiza mtumiaji kwenye admin_profile na kuondoa kutoka profile.)
+- **Set admin:** Supabase → SQL Editor:  
+  `SELECT public.grant_admin_by_email('your-email@example.com');`  
+  (Adds user to admin_profile and removes from profile.)
 
 ---
 

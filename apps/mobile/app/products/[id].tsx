@@ -572,7 +572,7 @@ export default function ProductDetail() {
                 style={styles.textArea}
                 value={reviewComment}
                 onChangeText={setReviewComment}
-                placeholder="Andika maoni yako..."
+                placeholder="Write your review..."
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
@@ -597,7 +597,7 @@ export default function ProductDetail() {
                     }
                     try {
                       await submitReview(id!, null, reviewRating, reviewComment);
-                      Alert.alert('Success', 'Review imewasilishwa. Itaangaliwa na admin.');
+                      Alert.alert('Success', 'Review submitted. It will be reviewed by admin.');
                       setShowReviewForm(false);
                       setReviewRating(0);
                       setReviewComment('');

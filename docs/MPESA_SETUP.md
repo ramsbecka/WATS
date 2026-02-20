@@ -23,7 +23,7 @@ Baada ya ku-create app, utapata:
 
 Nenda Supabase Dashboard → Settings → Edge Functions → Secrets
 
-Ongeza secrets zifuatazo:
+Add the following secrets:
 
 ```bash
 MPESA_CONSUMER_KEY=your_consumer_key

@@ -1,9 +1,9 @@
-import { useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, Image, FlatList, Dimensions, useWindowDimensions, Platform, AppState, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/components/ui/Screen';
-import { getCategories, getProducts, getBanners, subscribeToCategories, subscribeToProducts } from '@/api/client';
+import { getCategories, getProducts, getBanners, subscribeToCategories, subscribeToProducts, subscribeToBanners } from '@/api/client';
 import { colors, spacing, typography, radius } from '@/theme/tokens';
 import { useAuthStore } from '@/store/auth';
 import { useWebLayout } from '@/hooks/useIsWeb';
@@ -33,16 +33,17 @@ export default function Home() {
   useEffect(() => {
     loadData();
 
-    // Subscribe to real-time changes
+    // Realtime: admin changes flow to mobile immediately
     const unsubscribeCategories = subscribeToCategories((categories) => {
       setCategories(categories);
     });
-
     const unsubscribeProducts = subscribeToProducts(() => {
-      loadData(); // Reload all data when products change
+      loadData();
+    });
+    const unsubscribeBanners = subscribeToBanners(() => {
+      getBanners().then(setBanners).catch(() => {});
     });
 
-    // Refresh data when app comes to foreground
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') {
         loadData();
@@ -52,9 +53,17 @@ export default function Home() {
     return () => {
       unsubscribeCategories();
       unsubscribeProducts();
+      unsubscribeBanners();
       subscription.remove();
     };
   }, []);
+
+  // When user returns to Home tab, reload so admin-led content is always current
+  useFocusEffect(
+    useCallback(() => {
+      loadData(true);
+    }, [])
+  );
 
 
   useEffect(() => {

@@ -371,7 +371,7 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
           <div>
             <label className="block text-sm font-medium text-slate-700">Store <span className="text-red-500">*</span></label>
             <select
-              aria-label="Duka"
+              aria-label="Store"
               aria-required="true"
               value={form.vendor_id}
               onChange={(e) => setForm((f) => ({ ...f, vendor_id: e.target.value }))}
@@ -385,7 +385,7 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700">Category (Kundi kuu)</label>
+            <label className="block text-sm font-medium text-slate-700">Category (Main category)</label>
             <select
               aria-label="Main Category"
               value={selectedMainCategoryId}
@@ -426,7 +426,7 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
         </div>
         <div>
           <label id="product-sku-label" className="block text-sm font-medium text-slate-700">SKU</label>
-          <p className="mt-0.5 text-xs text-slate-500">SKU itajitengeneza kiotomatiki kutoka jina la bidhaa. Unaweza kuibadilisha kwa kujaza hapa.</p>
+          <p className="mt-0.5 text-xs text-slate-500">SKU is auto-generated from the product name. You can override it by entering a value here.</p>
           <input
             id="product-sku"
             aria-labelledby="product-sku-label"

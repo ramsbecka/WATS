@@ -1,8 +1,8 @@
-# Admin – Schema na Storage (Ukaguzi)
+# Admin – Schema and Storage (Audit)
 
-## 1. Schema SQL – tables zinazotumika na Admin
+## 1. Schema SQL – tables used by Admin
 
-Tables zote za admin zipo kwenye migrations:
+All admin tables are defined in migrations:
 
 | Table | Migration | Admin usage |
 |-------|-----------|-------------|
@@ -19,24 +19,24 @@ Tables zote za admin zipo kwenye migrations:
 | shipments | 20250206000001 | Shipments, OrderDetail |
 | returns | 20250206000001 | Returns, Dashboard |
 
-**Hitimisho:** Schema za admin zimeundwa zote kwenye `supabase/migrations/`.
+**Summary:** All admin schema is defined in `supabase/migrations/`.
 
 ---
 
-## 2. Storage buckets (picha, video, miamala)
+## 2. Storage buckets (images, video, transactions)
 
-Buckets zimeundwa kwenye **20250208100003_storage_avatars_bucket.sql**:
+Buckets are created in **20250208100003_storage_avatars_bucket.sql**:
 
-| Bucket | Kusoma | Matumizi |
+| Bucket | Read | Use |
 |--------|--------|----------|
-| **avatars** | Public | Picha za wasifu (mobile app) |
-| **media** | Public | Picha/video za bidhaa, maonyesho; path: `media/products/{product_id}/*` au `media/{user_id}/*` |
-| **miamala** | Private | Faili za miamala (receipts, uthibitisho); path: `miamala/{user_id}/*` |
+| **avatars** | Public | Profile pictures (mobile app) |
+| **media** | Public | Product images/video, displays; path: `media/products/{product_id}/*` or `media/{user_id}/*` |
+| **miamala** | Private | Transaction files (receipts, proof); path: `miamala/{user_id}/*` |
 
 ---
 
-## 3. Muunganisho wa Admin na buckets
+## 3. Admin integration with buckets
 
-- **media:** Admin inatumia bucket **media** kwa picha za bidhaa (ProductEdit – upload kwenye `media/products/{productId}/*`, URL inahifadhiwa kwenye `product_images`).
-- **avatars:** Hatumiki na admin (ni kwa app ya mobile).
-- **miamala:** Inaweza kutumika na admin kuhifadhi receipts/attachments (kwa sasa haijaanza; unaweza kuongeza kipande cha “attach file” kwenye Payments/Orders).
+- **media:** Admin uses the **media** bucket for product images (ProductEdit – upload to `media/products/{productId}/*`, URL stored in `product_images`).
+- **avatars:** Not used by admin (for mobile app only).
+- **miamala:** Can be used by admin to store receipts/attachments (not started yet; you can add an attach file section to Payments/Orders).

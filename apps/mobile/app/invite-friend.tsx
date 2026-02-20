@@ -89,7 +89,7 @@ export default function InviteFriend() {
         </Pressable>
         <View style={styles.headerContent}>
           <Ionicons name="people" size={24} color={colors.primary} />
-          <Text style={styles.title}>Alika Rafiki</Text>
+          <Text style={styles.title}>Invite Friend</Text>
         </View>
         <View style={styles.placeholder} />
       </View>
@@ -98,28 +98,28 @@ export default function InviteFriend() {
         <Card style={styles.codeCard}>
           <View style={styles.codeHeader}>
             <Ionicons name="ticket" size={24} color={colors.primary} />
-            <Text style={styles.codeLabel}>Nambari Yako ya Ualika</Text>
+            <Text style={styles.codeLabel}>Your Referral Code</Text>
           </View>
           <Pressable onPress={handleCopyCode} style={styles.codeContainer}>
             <Text style={styles.codeText}>{referralCode}</Text>
             <Ionicons name="copy-outline" size={22} color={colors.primary} />
           </Pressable>
-          <Text style={styles.codeHint}>Bofya ili kunakili</Text>
+          <Text style={styles.codeHint}>Tap to copy</Text>
         </Card>
 
         <Card style={styles.benefitsCard}>
           <View style={styles.benefitsHeader}>
             <Ionicons name="gift" size={24} color={colors.primary} />
-            <Text style={styles.benefitsTitle}>Faida</Text>
+            <Text style={styles.benefitsTitle}>Benefits</Text>
           </View>
           <View style={styles.benefitRow}>
             <View style={styles.benefitIconContainer}>
               <Ionicons name="gift-outline" size={24} color={colors.primary} />
             </View>
             <View style={styles.benefitText}>
-              <Text style={styles.benefitLabel}>Rafiki Yako Atapata</Text>
+              <Text style={styles.benefitLabel}>Your Friend Gets</Text>
               <Text style={styles.benefitValue}>
-                {stats?.referred_bonus_points || 50} Alama za Ziada
+                {stats?.referred_bonus_points || 50} Bonus Points
               </Text>
             </View>
           </View>
@@ -128,9 +128,9 @@ export default function InviteFriend() {
               <Ionicons name="star" size={24} color={colors.primary} />
             </View>
             <View style={styles.benefitText}>
-              <Text style={styles.benefitLabel}>Wewe Utapata</Text>
+              <Text style={styles.benefitLabel}>You Get</Text>
               <Text style={styles.benefitValue}>
-                {stats?.referral_bonus_points || 100} Alama za Ziada
+                {stats?.referral_bonus_points || 100} Bonus Points
               </Text>
             </View>
           </View>
@@ -140,12 +140,12 @@ export default function InviteFriend() {
           <Card style={styles.statsCard}>
             <View style={styles.statsHeader}>
               <Ionicons name="stats-chart" size={24} color={colors.primary} />
-              <Text style={styles.statsTitle}>Takwimu Zako</Text>
+              <Text style={styles.statsTitle}>Your Stats</Text>
             </View>
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>{stats.total_referrals || 0}</Text>
-                <Text style={styles.statLabel}>Jumla ya Walioualika</Text>
+                <Text style={styles.statLabel}>Total Invited</Text>
               </View>
             </View>
           </Card>
@@ -154,7 +154,7 @@ export default function InviteFriend() {
         <View style={styles.actions}>
           <Pressable onPress={handleShare} style={styles.shareBtn}>
             <Ionicons name="share-outline" size={22} color={colors.onPrimary} />
-            <Text style={styles.shareBtnText}>Shiriki Nambari ya Ualika</Text>
+            <Text style={styles.shareBtnText}>Share Referral Code</Text>
           </Pressable>
         </View>
       </View>

@@ -157,26 +157,31 @@ export async function chatWithAI(
   }
 }
 
+const SUPPORT_PHONE = '+255 792 108 835';
+
 function getSimpleResponse(userMessage: string): string {
   const lower = userMessage.toLowerCase();
-  
-  if (lower.includes('order') || lower.includes('delivery')) {
-    return 'You can check your order status in the Orders section of your profile. For delivery inquiries, please contact our support team.';
+  const contact = ` Kwa msaada zaidi: badilisha kwa "Live" au piga ${SUPPORT_PHONE}.`;
+
+  if (lower.includes('order') || lower.includes('delivery') || lower.includes('status')) {
+    return 'Order zako unaweza kuangalia kwenye Profile → Orders. Status: pending, confirmed, processing, shipped, delivered. Tracking inaweza kuwekwa na timu yetu.' + contact;
   }
-  
   if (lower.includes('return') || lower.includes('refund')) {
-    return 'You can request a return from the Orders section. Select the order and click "Request Return".';
+    return 'Omba return: nenda Orders, chagua order, bofya "Request Return". Refund inaweza kufanywa na admin.' + contact;
   }
-  
-  if (lower.includes('payment') || lower.includes('pay')) {
-    return 'We accept M-Pesa, Airtel Money, and other mobile payment methods. Payment is processed securely during checkout.';
+  if (lower.includes('payment') || lower.includes('pay') || lower.includes('mpesa') || lower.includes('stk')) {
+    return 'Malipo: M-Pesa (STK Push) wakati wa checkout. Simu inachukuliwa kutoka profile. Ikiwa STK imeshindwa, tumia "Retry Payment" kwenye ukurasa wa malipo.' + contact;
   }
-  
-  if (lower.includes('product') || lower.includes('item')) {
-    return 'You can browse our products by category. Use the search bar to find specific items.';
+  if (lower.includes('voucher') || lower.includes('discount')) {
+    return 'Voucher: weka code wakati wa checkout. Discount inakokotwa kiotomatiki. Voucher ni ya mtumiaji aliyepewa tu.' + contact;
   }
-  
-  return 'Thank you for contacting us. For specific inquiries, please visit the Service Center in your profile or contact our support team.';
+  if (lower.includes('cart') || lower.includes('basket')) {
+    return 'Cart: ongeza bidhaa, badilisha idadi, kisha checkout. Unaweza kuchagua variant (rangi/size) ikiwa ipo.' + contact;
+  }
+  if (lower.includes('product') || lower.includes('item') || lower.includes('bidhaa')) {
+    return 'Bidhaa: angalia kwa kategoria au tumia search. Bofya bidhaa kwa maelezo na variants.' + contact;
+  }
+  return 'Asante. Kwa maswali mengi au magumu, tumia "Live" kuchat na mtu au piga: ' + SUPPORT_PHONE + '.';
 }
 
 // =============================================================================

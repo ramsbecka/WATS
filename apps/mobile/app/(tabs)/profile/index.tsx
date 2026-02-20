@@ -159,12 +159,6 @@ export default function Profile() {
             <Text style={styles.headerTitle}>Profile</Text>
             <View style={styles.headerRight}>
               <Text style={styles.headerLanguage}>English</Text>
-              <Pressable onPress={() => router.push('/chatbot')} style={styles.headerIconBtn}>
-                <Ionicons name="chatbubble-outline" size={22} color={colors.surface} />
-              </Pressable>
-              <Pressable onPress={() => router.push('/(tabs)/profile/edit')} style={styles.headerIconBtn}>
-                <Ionicons name="settings-outline" size={22} color={colors.surface} />
-              </Pressable>
             </View>
           </View>
 
@@ -202,19 +196,14 @@ export default function Profile() {
           </Card>
         </View>
 
-        {/* My Order Section */}
-        <View style={styles.section}>
+        {/* My Order Section - single tap opens orders list */}
+        <Pressable style={styles.section} onPress={() => router.push('/(tabs)/orders')}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>My Order</Text>
-            <Pressable onPress={() => router.push('/(tabs)/orders')}>
-              <Text style={styles.viewAllText}>View All</Text>
-            </Pressable>
+            <Text style={styles.viewAllText}>View All</Text>
           </View>
           <View style={styles.orderStatusRow}>
-            <Pressable
-              style={styles.orderStatusItem}
-              onPress={() => router.push('/(tabs)/orders')}
-            >
+            <View style={styles.orderStatusItem}>
               <View style={styles.orderStatusIcon}>
                 <Ionicons name="time-outline" size={24} color={colors.primary} />
               </View>
@@ -224,11 +213,8 @@ export default function Profile() {
                   <Text style={styles.orderBadgeText}>{orderCounts.pendingPayment}</Text>
                 </View>
               )}
-            </Pressable>
-            <Pressable
-              style={styles.orderStatusItem}
-              onPress={() => router.push('/(tabs)/orders')}
-            >
+            </View>
+            <View style={styles.orderStatusItem}>
               <View style={styles.orderStatusIcon}>
                 <Ionicons name="car-outline" size={24} color={colors.primary} />
               </View>
@@ -238,11 +224,8 @@ export default function Profile() {
                   <Text style={styles.orderBadgeText}>{orderCounts.inTransit}</Text>
                 </View>
               )}
-            </Pressable>
-            <Pressable
-              style={styles.orderStatusItem}
-              onPress={() => router.push('/(tabs)/orders')}
-            >
+            </View>
+            <View style={styles.orderStatusItem}>
               <View style={styles.orderStatusIcon}>
                 <Ionicons name="chatbubble-ellipses-outline" size={24} color={colors.primary} />
               </View>
@@ -252,11 +235,8 @@ export default function Profile() {
                   <Text style={styles.orderBadgeText}>{orderCounts.pendingFeedback}</Text>
                 </View>
               )}
-            </Pressable>
-            <Pressable
-              style={styles.orderStatusItem}
-              onPress={() => router.push('/(tabs)/orders')}
-            >
+            </View>
+            <View style={styles.orderStatusItem}>
               <View style={styles.orderStatusIcon}>
                 <Ionicons name="return-up-back-outline" size={24} color={colors.primary} />
               </View>
@@ -266,9 +246,9 @@ export default function Profile() {
                   <Text style={styles.orderBadgeText}>{orderCounts.returnRefund}</Text>
                 </View>
               )}
-            </Pressable>
+            </View>
           </View>
-        </View>
+        </Pressable>
 
         {/* Menu Items */}
         <View style={styles.menuSection}>
@@ -461,12 +441,6 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.surface,
     fontWeight: '500',
-  },
-  headerIconBtn: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   profileCard: {
     marginTop: 0,

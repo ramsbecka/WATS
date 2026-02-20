@@ -1,127 +1,127 @@
-# Jinsi ya Kuweka M-Pesa Credentials
+# How to Set Up M-Pesa Credentials
 
-## 📋 Orodha ya Credentials Unazohitaji
+## 📋 List of Required Credentials
 
-### ⚠️ MUHIMU: Lazima uweke ZOTE hizi!
+### ⚠️ IMPORTANT: You must set ALL of these!
 
-**Consumer Key na Consumer Secret tu haitoshi!** Mfumo unahitaji credentials zote zifuatazo:
+**Consumer Key and Consumer Secret alone are not enough!** The system needs all of the following credentials:
 
-**Kutoka M-Pesa Developer Portal:**
+**From M-Pesa Developer Portal:**
 1. **Consumer Key** ✅ REQUIRED
 2. **Consumer Secret** ✅ REQUIRED
 3. **Shortcode** (Business Short Code) ✅ REQUIRED
 4. **Passkey** (Lipa Na M-Pesa Online Passkey) ✅ REQUIRED
 
-**Kutoka Supabase Project yako:**
-5. **MPESA_ENV** ✅ REQUIRED (sandbox au production)
-6. **MPESA_CALLBACK_URL** ✅ REQUIRED (URL ya webhook yako)
+**From your Supabase Project:**
+5. **MPESA_ENV** ✅ REQUIRED (sandbox or production)
+6. **MPESA_CALLBACK_URL** ✅ REQUIRED (your webhook URL)
 
-**Optional (kwa security):**
-7. **PAYMENT_WEBHOOK_SECRET** ⚪ OPTIONAL (kwa signature verification tu)
+**Optional (for security):**
+7. **PAYMENT_WEBHOOK_SECRET** ⚪ OPTIONAL (for signature verification only)
 
 ---
 
-## 🔐 Hatua za Kuweka Credentials
+## 🔐 Steps to Set Credentials
 
-### Hatua 1: Pata Credentials kutoka M-Pesa Developer Portal
+### Step 1: Get Credentials from M-Pesa Developer Portal
 
-1. Nenda: https://developer.safaricom.co.ke
-2. Login au Create Account
-3. Nenda kwenye **My Apps**
-4. Create App mpya au chagua app yako
-5. Chagua **"Lipa Na M-Pesa Online (STK Push)"**
-6. Copy credentials zote:
+1. Go to: https://developer.safaricom.co.ke
+2. Log in or Create Account
+3. Go to **My Apps**
+4. Create a new App or select your app
+5. Select **"Lipa Na M-Pesa Online (STK Push)"**
+6. Copy all credentials:
    - Consumer Key
    - Consumer Secret
    - Shortcode
    - Passkey
 
-### Hatua 2: Weka Credentials kwenye Supabase Dashboard
+### Step 2: Set Credentials in Supabase Dashboard
 
-#### Njia A: Kwa Supabase Dashboard (Inapendekezwa)
+#### Method A: Via Supabase Dashboard (Recommended)
 
-1. **Fungua Supabase Dashboard:**
+1. **Open Supabase Dashboard:**
    ```
    https://supabase.com/dashboard
    ```
 
-2. **Chagua Project yako**
+2. **Select your project**
 
-3. **Nenda kwenye Edge Functions Secrets:**
-   - Click **Settings** (icon ya gear) kwenye sidebar ya kushoto
-   - Chagua **Edge Functions** (chini ya "Project Settings")
-   - Click tab **Secrets**
+3. **Go to Edge Functions Secrets:**
+   - Click **Settings** (gear icon) in the left sidebar
+   - Select **Edge Functions** (under "Project Settings")
+   - Click the **Secrets** tab
 
-   Au nenda moja kwa moja:
+   Or go directly to:
    ```
    https://supabase.com/dashboard/project/YOUR_PROJECT_ID/settings/functions
    ```
 
-4. **Ongeza Secrets zifuatazo (LAZIMA ZOTE):**
+4. **Add the following secrets (ALL REQUIRED):**
 
-   ⚠️ **MUHIMU:** Lazima uweke secrets ZOTE hizi, sio Consumer Key na Consumer Secret tu!
+   ⚠️ **IMPORTANT:** You must set ALL of these secrets, not just Consumer Key and Consumer Secret!
 
-   Click button **"Add new secret"** na ongeza kila moja:
+   Click **"Add new secret"** and add each one:
 
    **1. MPESA_CONSUMER_KEY** ✅ REQUIRED
    ```
    Name: MPESA_CONSUMER_KEY
-   Value: [Consumer Key yako kutoka M-Pesa Portal]
+   Value: [Your Consumer Key from M-Pesa Portal]
    ```
 
    **2. MPESA_CONSUMER_SECRET** ✅ REQUIRED
    ```
    Name: MPESA_CONSUMER_SECRET
-   Value: [Consumer Secret yako kutoka M-Pesa Portal]
+   Value: [Your Consumer Secret from M-Pesa Portal]
    ```
 
    **3. MPESA_SHORTCODE** ✅ REQUIRED
    ```
    Name: MPESA_SHORTCODE
-   Value: [Shortcode yako, kwa mfano: 174379]
+   Value: [Your shortcode, e.g.: 174379]
    ```
-   (Hii ni Business Short Code yako kutoka M-Pesa Portal)
+   (This is your Business Short Code from M-Pesa Portal)
 
    **4. MPESA_PASSKEY** ✅ REQUIRED
    ```
    Name: MPESA_PASSKEY
-   Value: [Passkey yako kutoka M-Pesa Portal]
+   Value: [Your Passkey from M-Pesa Portal]
    ```
-   (Hii ni "Lipa Na M-Pesa Online Passkey" kutoka M-Pesa Portal)
+   (This is the "Lipa Na M-Pesa Online Passkey" from M-Pesa Portal)
 
    **5. MPESA_ENV** ✅ REQUIRED
    ```
    Name: MPESA_ENV
    Value: sandbox
    ```
-   (Kwa production, badilisha kuwa `production`)
+   (For production, change to `production`)
 
    **6. MPESA_CALLBACK_URL** ✅ REQUIRED
    ```
    Name: MPESA_CALLBACK_URL
    Value: https://YOUR_PROJECT_ID.supabase.co/functions/v1/payment-webhook
    ```
-   (Badilisha `YOUR_PROJECT_ID` na Project ID yako ya Supabase)
+   (Replace `YOUR_PROJECT_ID` with your Supabase Project ID)
 
    **7. PAYMENT_WEBHOOK_SECRET** ⚪ OPTIONAL
    ```
    Name: PAYMENT_WEBHOOK_SECRET
-   Value: [optional secret kwa signature verification]
+   Value: [optional secret for signature verification]
    ```
-   (Hii ni optional tu, unaweza kuiacha kwa sasa)
+   (This is optional; you can leave it for now)
 
-#### Njia B: Kwa Supabase CLI
+#### Method B: Via Supabase CLI
 
-Ikiwa unatumia Supabase CLI, tumia commands hizi:
+If you use Supabase CLI, run these commands:
 
 ```bash
-# Nenda kwenye project directory
+# Go to project directory
 cd /path/to/your/project
 
-# Link project (kwa mara ya kwanza tu)
+# Link project (first time only)
 supabase link --project-ref YOUR_PROJECT_ID
 
-# Weka secrets
+# Set secrets
 supabase secrets set MPESA_CONSUMER_KEY="your_consumer_key_here"
 supabase secrets set MPESA_CONSUMER_SECRET="your_consumer_secret_here"
 supabase secrets set MPESA_SHORTCODE="your_shortcode_here"
@@ -129,17 +129,17 @@ supabase secrets set MPESA_PASSKEY="your_passkey_here"
 supabase secrets set MPESA_ENV="sandbox"
 supabase secrets set MPESA_CALLBACK_URL="https://YOUR_PROJECT_ID.supabase.co/functions/v1/payment-webhook"
 
-# Hakikisha secrets zimewekwa
+# Verify secrets are set
 supabase secrets list
 ```
 
 ---
 
-## ✅ Hakikisha Credentials Zimewekwa Sahihi
+## ✅ Verify Credentials Are Set Correctly
 
-Baada ya kuweka credentials, hakikisha:
+After setting credentials, ensure:
 
-1. **Zote 6 zimewekwa (REQUIRED):**
+1. **All 6 are set (REQUIRED):**
    - ✅ MPESA_CONSUMER_KEY
    - ✅ MPESA_CONSUMER_SECRET
    - ✅ MPESA_SHORTCODE
@@ -147,77 +147,77 @@ Baada ya kuweka credentials, hakikisha:
    - ✅ MPESA_ENV
    - ✅ MPESA_CALLBACK_URL
    
-   ⚠️ **Kumbuka:** Consumer Key na Consumer Secret tu haitoshi! Lazima uweke zote 6.
+   ⚠️ **Remember:** Consumer Key and Consumer Secret alone are not enough! You must set all 6.
 
-2. **MPESA_ENV** imewekwa `sandbox` kwa testing au `production` kwa production
-3. **MPESA_CALLBACK_URL** ina Project ID yako sahihi
-4. **Hakuna spaces** mwanzoni au mwishoni wa values
-5. **PAYMENT_WEBHOOK_SECRET** ni optional tu (unaweza kuiacha kwa sasa)
+2. **MPESA_ENV** is set to `sandbox` for testing or `production` for production
+3. **MPESA_CALLBACK_URL** has your correct Project ID
+4. **No spaces** at the start or end of values
+5. **PAYMENT_WEBHOOK_SECRET** is optional (you can leave it for now)
 
 ---
 
 ## 🧪 Test Credentials
 
-Baada ya kuweka credentials:
+After setting credentials:
 
-1. **Deploy Edge Functions** (ikiwa bado haujadeploy):
+1. **Deploy Edge Functions** (if not already deployed):
    ```bash
    supabase functions deploy checkout-initiate
    supabase functions deploy payment-webhook
    ```
 
-2. **Test kwa mobile app:**
-   - Fungua mobile app
+2. **Test with mobile app:**
+   - Open the mobile app
    - Add products to cart
    - Proceed to checkout
-   - Enter phone number (kwa sandbox: `254708374149`)
+   - Enter phone number (for sandbox: `254708374149`)
    - Submit payment
-   - Unapaswa kupokea STK Push prompt kwenye simu
+   - You should receive the STK Push prompt on your phone
 
 ---
 
 ## 🔍 Troubleshooting
 
-### Credentials hazifanyi kazi?
+### Credentials not working?
 
 1. **Check Supabase Logs:**
-   - Nenda: Dashboard → Edge Functions → Logs
-   - Angalia kama kuna errors kuhusu missing credentials
+   - Go to: Dashboard → Edge Functions → Logs
+   - Look for errors about missing credentials
 
-2. **Verify Secrets ziko:**
+2. **Verify secrets exist:**
    ```bash
    supabase secrets list
    ```
 
-3. **Check Format:**
-   - Hakikisha hakuna quotes zisizohitajika
-   - Hakikisha hakuna spaces mwanzoni/mwishoni
-   - Hakikisha Project ID yako sahihi kwenye Callback URL
+3. **Check format:**
+   - Ensure there are no extra quotes
+   - Ensure no leading/trailing spaces
+   - Ensure your Project ID is correct in the Callback URL
 
-4. **Test Access Token:**
-   - Edge Function inapaswa kupata access token kutoka M-Pesa
-   - Ikiwa haipati, credentials zinaweza kuwa wrong
+4. **Test access token:**
+   - The Edge Function should obtain an access token from M-Pesa
+   - If it fails, credentials may be wrong
 
 ### Sandbox vs Production
 
 **Sandbox:**
 - `MPESA_ENV=sandbox`
 - Use test phone numbers
-- Use sandbox credentials kutoka Developer Portal
+- Use sandbox credentials from Developer Portal
 
 **Production:**
 - `MPESA_ENV=production`
 - Use real phone numbers
 - Use production credentials
-- Update Callback URL kwa production domain
+- Update Callback URL to production domain
 
 ---
 
-## 📝 Mfano wa Credentials Format
+## 📝 Credentials Format Example
 
-### ⚠️ MUHIMU: Lazima uweke ZOTE hizi 6 secrets!
+### ⚠️ IMPORTANT: You must set all 6 of these secrets!
 
-**Kwa Sandbox (REQUIRED - lazima uweke zote):**
+**For Sandbox (REQUIRED - set all):**
 ```
 MPESA_CONSUMER_KEY=abc123xyz456                    ✅ REQUIRED
 MPESA_CONSUMER_SECRET=def789uvw012                 ✅ REQUIRED
@@ -227,7 +227,7 @@ MPESA_ENV=sandbox                                  ✅ REQUIRED
 MPESA_CALLBACK_URL=https://tdvjdwgfnddytpzwzznt.supabase.co/functions/v1/payment-webhook  ✅ REQUIRED
 ```
 
-**Kwa Production (REQUIRED - lazima uweke zote):**
+**For Production (REQUIRED - set all):**
 ```
 MPESA_CONSUMER_KEY=your_production_consumer_key    ✅ REQUIRED
 MPESA_CONSUMER_SECRET=your_production_consumer_secret  ✅ REQUIRED
@@ -237,35 +237,35 @@ MPESA_ENV=production                               ✅ REQUIRED
 MPESA_CALLBACK_URL=https://your-project.supabase.co/functions/v1/payment-webhook  ✅ REQUIRED
 ```
 
-**Optional (unaweza kuiacha kwa sasa):**
+**Optional (you can leave for now):**
 ```
 PAYMENT_WEBHOOK_SECRET=your_optional_secret        ⚪ OPTIONAL
 ```
 
-### Kwa nini lazima uweke zote?
+### Why must you set all of them?
 
-- **Consumer Key & Secret:** Kwa authentication na M-Pesa API
-- **Shortcode:** Business Short Code yako (kama 174379)
-- **Passkey:** Kwa encryption ya STK Push requests
-- **ENV:** Kujua kama unatumia sandbox au production
-- **Callback URL:** M-Pesa inatumia hii kwa kurudi payment status
+- **Consumer Key & Secret:** For authentication with M-Pesa API
+- **Shortcode:** Your Business Short Code (e.g. 174379)
+- **Passkey:** For encryption of STK Push requests
+- **ENV:** Tells the system whether you use sandbox or production
+- **Callback URL:** M-Pesa uses this to return payment status
 
 ---
 
 ## ⚠️ Security Notes
 
-1. **Usiweke credentials kwenye code files** (.env files za apps)
-2. **Tumia Supabase Secrets tu** kwa Edge Functions
-3. **Usishare credentials** kwenye public repositories
-4. **Rotate credentials** mara kwa mara kwa security
-5. **Use different credentials** kwa sandbox na production
+1. **Do not put credentials in code files** (app .env files)
+2. **Use Supabase Secrets only** for Edge Functions
+3. **Do not share credentials** in public repositories
+4. **Rotate credentials** regularly for security
+5. **Use different credentials** for sandbox and production
 
 ---
 
 ## 📞 Support
 
-Ikiwa una shida:
+If you have issues:
 1. Check Supabase Edge Functions logs
-2. Check M-Pesa Developer Portal kwa API status
-3. Verify credentials zako kwenye M-Pesa Portal
-4. Test kwa sandbox kwanza kabla ya ku-move production
+2. Check M-Pesa Developer Portal for API status
+3. Verify your credentials in M-Pesa Portal
+4. Test in sandbox first before moving to production

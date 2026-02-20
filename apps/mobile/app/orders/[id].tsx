@@ -138,7 +138,7 @@ export default function OrderDetail() {
           await uploadReturnImage(returnData.id, img.base64, 'image/jpeg');
         }
       }
-      Alert.alert('Success', 'Return request imewasilishwa. Tutakupigia simu hivi karibuni.');
+      Alert.alert('Success', 'Return request submitted. We will call you soon.');
       setShowReturnForm(false);
       setReturnReason('');
       setReturnComment('');

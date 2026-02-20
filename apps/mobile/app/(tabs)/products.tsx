@@ -77,7 +77,7 @@ export default function ProductsTab() {
     } else {
       loadRecommendedAndHot();
     }
-  }, [selectedCategoryId]);
+  }, [selectedCategoryId, mainCategories.length]);
 
   const loadData = async (skipLoading = false) => {
     if (!skipLoading) setLoading(true);
@@ -217,6 +217,38 @@ export default function ProductsTab() {
           )}
         </Pressable>
       </View>
+    );
+  };
+
+  const renderCategoryChips = () => {
+    return (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipsRow}
+        style={styles.chipsScroll}
+      >
+        <Pressable
+          style={[styles.chip, selectedCategoryId === null && styles.chipActive]}
+          onPress={() => setSelectedCategoryId(null)}
+        >
+          <Text style={[styles.chipText, selectedCategoryId === null && styles.chipTextActive]}>All</Text>
+        </Pressable>
+        {mainCategories.map((cat) => {
+          const isSelected = selectedCategoryId === cat.id;
+          return (
+            <Pressable
+              key={cat.id}
+              style={[styles.chip, isSelected && styles.chipActive]}
+              onPress={() => setSelectedCategoryId(cat.id)}
+            >
+              <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
+                {cat.name_en ?? 'Category'}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
     );
   };
 
@@ -440,6 +472,7 @@ export default function ProductsTab() {
   return (
     <Screen edges={['top']}>
       {renderSearchHeader()}
+      {mainCategories.length > 0 && renderCategoryChips()}
       <View style={styles.container}>
         {renderProductGrid()}
       </View>
@@ -455,9 +488,9 @@ const styles = StyleSheet.create({
   searchHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
     gap: spacing.sm,
     backgroundColor: colors.background,
   },
@@ -503,6 +536,42 @@ const styles = StyleSheet.create({
   notificationBadgeText: {
     color: '#FFFFFF',
     fontSize: 10,
+    fontWeight: '600',
+  },
+  chipsScroll: {
+    backgroundColor: colors.background,
+    maxHeight: 40,
+  },
+  chipsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    gap: spacing.sm,
+    paddingRight: spacing.md,
+  },
+  chip: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    height: 28,
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    flexShrink: 0,
+  },
+  chipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  chipText: {
+    fontSize: 14,
+    color: colors.textPrimary,
+    lineHeight: 20,
+  },
+  chipTextActive: {
+    color: colors.onPrimary,
     fontWeight: '600',
   },
   productsContainer: {
@@ -569,18 +638,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   section: {
-    padding: spacing.md,
-    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.sm,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   sectionTitle: {
     ...typography.heading,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: colors.textPrimary,
   },
@@ -594,18 +664,17 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.xs,
     justifyContent: 'flex-start',
-    paddingHorizontal: spacing.xs,
   },
   categoryCard: {
-    width: (SCREEN_WIDTH - spacing.md * 2 - spacing.xs * 4) / 3,
+    width: (SCREEN_WIDTH - spacing.sm * 2 - spacing.xs * 3) / 4,
     backgroundColor: colors.surface,
     borderRadius: radius.sm,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
     overflow: 'hidden',
   },
   categoryImage: {
     width: '100%',
-    aspectRatio: 1,
+    aspectRatio: 0.9,
     backgroundColor: colors.borderLight,
   },
   categoryImagePlaceholder: {
@@ -614,7 +683,7 @@ const styles = StyleSheet.create({
   },
   categoryName: {
     ...typography.body,
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textPrimary,
     padding: spacing.xs,
     textAlign: 'center',
@@ -624,18 +693,17 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.xs,
     justifyContent: 'flex-start',
-    paddingHorizontal: spacing.xs,
   },
   subCategoryCard: {
-    width: (SCREEN_WIDTH - spacing.md * 2 - spacing.xs * 4) / 3,
+    width: (SCREEN_WIDTH - spacing.sm * 2 - spacing.xs * 3) / 4,
     backgroundColor: colors.surface,
     borderRadius: radius.sm,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
     overflow: 'hidden',
   },
   subCategoryImage: {
     width: '100%',
-    aspectRatio: 1,
+    aspectRatio: 0.9,
     backgroundColor: colors.borderLight,
   },
   subCategoryImagePlaceholder: {
@@ -644,7 +712,7 @@ const styles = StyleSheet.create({
   },
   subCategoryName: {
     ...typography.body,
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textPrimary,
     padding: spacing.xs,
     textAlign: 'center',

@@ -1,96 +1,96 @@
 # WATS – Project Brief
 
-## Lengo la mradi (Project goal)
+## Project goal
 
-Kusimamia **WATS**: jukwaa la e-commerce la wanunuzi wengi (multi-vendor) linalotumika Tanzania, lenye:
+**WATS** is a multi-vendor e-commerce platform for Tanzania, with:
 
-- **Programu ya simu ya wateja** (Android & iOS)
-- **Dashibodi ya Admin** (wavuti)
-- **Backend ya Supabase**
+- **Customer mobile app** (Android & iOS)
+- **Admin dashboard** (web)
+- **Supabase backend**
 
 ---
 
-## Modeli ya biashara (Key business model)
+## Key business model
 
-| Neno | Maelezo |
+| Term | Description |
 |------|--------|
-| **Wauzaji (Vendors)** | Wanaingiza bidhaa kwenye mfumo |
-| **WATS (Operator)** | Inamiliki inventory, ghala, utekelezaji (fulfillment), usafirishaji na kurudisha bidhaa |
-| **Malipo** | Kwanza pesa za simu (mobile money), kwa nambari ya simu |
-| **Mtazamo wa UI** | Premium, utulivu, wa kuaminika, ulioinspirishwa na Korean minimal |
+| **Vendors** | Add products to the system |
+| **WATS (Operator)** | Owns inventory, warehouse, fulfillment, shipping and returns |
+| **Payments** | Mobile money first, by phone number |
+| **UI direction** | Premium, calm, trustworthy, Korean minimal-inspired |
 
 ---
 
-## Mahitaji ya msingi (Core requirements – non-negotiable)
+## Core requirements (non-negotiable)
 
 ### Tech stack
-- **Simu:** React Native (Expo) + TypeScript  
+- **Mobile:** React Native (Expo) + TypeScript  
 - **Admin:** React + Vite + TypeScript + Tailwind + Shadcn/UI  
 - **Backend:** Supabase (Auth, PostgreSQL, Storage, RLS, Edge Functions)  
-- **Malipo:** M-Pesa, Mixx by Yas, HaloPesa, Airtel Money  
+- **Payments:** M-Pesa, Mixx by Yas, HaloPesa, Airtel Money  
 
-### Soko
-- **Nchi:** Tanzania  
-- **Sarafu:** TZS  
-- **Lugha:** Kiswahili na Kiingereza  
+### Market
+- **Country:** Tanzania  
+- **Currency:** TZS  
+- **Languages:** Swahili and English  
 
-### Utambulisho na watumiaji (Auth & users)
-- Usajili na **nambari ya simu + OTP**
-- Nambari ya simu ni **kitambulisho cha msingi**
-- Hakuna kuingiza simu tena wakati wa checkout (inatumika kutoka profile)
-- **Majukumu:** `customer` | `vendor` | `admin`  
+### Auth & users
+- Sign-up with **phone number + OTP**
+- Phone number is the **primary identifier**
+- No re-entering phone at checkout (taken from profile)
+- **Roles:** `customer` | `vendor` | `admin`  
 
-### Mfumo wa malipo (critical)
-- Malipo yanaanzishwa **server-side tu**
-- Nambari ya simu inatumika kutoka **profile** bila kuingiza tena
-- Mwendo: **STK Push / Payment Prompt**
-- Webhook za provider: **zina thibitishwa kwa saini (signature)**
-- **Idempotency** inatumika (hakuna malipo mara mbili kwa order moja)
-- Hakuna kuhifadhi data za kadi
+### Payment system (critical)
+- Payments are initiated **server-side only**
+- Phone number is taken from **profile** without re-entry
+- Flow: **STK Push / Payment Prompt**
+- Provider webhooks: **signature-verified**
+- **Idempotency** is used (no double payment per order)
+- No storing card data
 
-### Multi-vendor na utekelezaji wa kati
-- Wauzaji wanaingiza bidhaa
-- **Operator (WATS)** inasimamia: inventory, ghala, picking, packing, usafirishaji, returns
-- Wauzaji wanapata: ripoti za mauzo, commission, ratiba za malipo (payouts)
+### Multi-vendor and central fulfillment
+- Vendors add products
+- **Operator (WATS)** manages: inventory, warehouse, picking, packing, shipping, returns
+- Vendors get: sales reports, commission, payout schedules
 
 ---
 
-## Kazi za wateja (Customer app – features)
+## Customer app – features
 
-- Kuangalia na kutafuta bidhaa  
-- Cart na checkout  
-- Malipo kwa simu (one-tap, STK)  
-- Ufuatiliaji wa order  
+- Browse and search products  
+- Cart and checkout  
+- Mobile payment (one-tap, STK)  
+- Order tracking  
 - Wishlist  
-- Arifa (notifications)  
-- Pointi za loyalty  
+- Notifications  
+- Loyalty points  
 - BNPL (Buy Now Pay Later)  
-- Ununuzi wa livestream  
+- Livestream shopping  
 
 ---
 
-## Kazi za Admin (Admin dashboard – features)
+## Admin dashboard – features
 
 - Dashboard (KPIs)  
-- Bidhaa na makundi (CRUD)  
-- Usimamizi wa inventory  
-- Maagizo na usafirishaji  
-- Wauzaji (onboarding, ripoti)  
-- Ufuatiliaji wa malipo  
-- Payouts na ripoti  
+- Products and categories (CRUD)  
+- Inventory management  
+- Orders and shipping  
+- Vendors (onboarding, reports)  
+- Payment tracking  
+- Payouts and reports  
 
 ---
 
-## Matoleo yanayotarajiwa (Deliverables – order ya kazi)
+## Deliverables (work order)
 
-1. **Documentation kwanza** (hii – tujadili na kudocuments)  
+1. **Documentation first** (this – discuss and document)  
 2. **Database:** SQL schema + migrations + RLS  
-3. **Edge Functions:** Checkout & payment initiation + Payment webhook (M-Pesa mfano)  
-4. **React Native:** Screens za checkout na payment flow  
-5. **Design:** Figma design system na tokens (React Native & Tailwind)  
-6. **Admin dashboard:** Scaffold na kurasa kuu  
-7. **API spec:** Mkataba kamili wa REST + auth + roles  
-8. **Majaribio:** Unit na integration (payment, order → fulfillment)  
+3. **Edge Functions:** Checkout & payment initiation + Payment webhook (M-Pesa example)  
+4. **React Native:** Checkout and payment flow screens  
+5. **Design:** Figma design system and tokens (React Native & Tailwind)  
+6. **Admin dashboard:** Scaffold and main pages  
+7. **API spec:** Full REST + auth + roles contract  
+8. **Tests:** Unit and integration (payment, order → fulfillment)  
 9. **Deployment guide:** CI/CD, env vars, Supabase, Vercel/Netlify, EAS  
 
-Hii document ni **msingi wa mjadala**: kila kitu kinachojengwa kitarejelea hapa na kwenye docs zingine.
+This document is the **basis for discussion**: everything built will refer back to this and other docs.

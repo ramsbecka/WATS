@@ -91,11 +91,15 @@ export default function Addresses() {
         </Pressable>
         <View style={styles.headerContent}>
           <Ionicons name="location" size={24} color={colors.primary} />
-          <Text style={styles.title}>Anwani Zangu</Text>
+          <Text style={styles.title}>Address Management</Text>
         </View>
-        <Pressable onPress={() => router.push('/addresses/add')} style={styles.addBtn}>
-          <Ionicons name="add-circle" size={28} color={colors.primary} />
-        </Pressable>
+        {addresses.length > 0 ? (
+          <Pressable onPress={() => router.push('/addresses/add')} style={styles.addBtn}>
+            <Ionicons name="add-circle" size={28} color={colors.primary} />
+          </Pressable>
+        ) : (
+          <View style={styles.addBtn} />
+        )}
       </View>
 
       {addresses.length === 0 ? (
@@ -104,9 +108,9 @@ export default function Addresses() {
             <Ionicons name="location-outline" size={72} color={colors.textMuted} />
           </View>
           <Text style={styles.emptyTitle}>No saved addresses</Text>
-          <Text style={styles.emptySubtitle}>Ongeza anwani yako ya kwanza</Text>
+          <Text style={styles.emptySubtitle}>Add your first address</Text>
           <Button
-            title="Ongeza Anwani"
+            title="Add Address"
             onPress={() => router.push('/addresses/add')}
             style={styles.addFirstBtn}
           />
@@ -125,7 +129,7 @@ export default function Addresses() {
                   {item.is_default && (
                     <View style={styles.defaultBadge}>
                       <Ionicons name="star" size={12} color={colors.primary} />
-                      <Text style={styles.defaultBadgeText}>Chaguo-msingi</Text>
+                      <Text style={styles.defaultBadgeText}>Default</Text>
                     </View>
                   )}
                 </View>

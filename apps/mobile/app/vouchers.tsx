@@ -102,7 +102,7 @@ export default function Vouchers() {
         </Pressable>
         <View style={styles.headerContent}>
           <Ionicons name="ticket" size={24} color={colors.primary} />
-          <Text style={styles.title}>Vocha Zangu</Text>
+          <Text style={styles.title}>My Vouchers</Text>
         </View>
         <View style={styles.placeholder} />
       </View>
@@ -116,7 +116,7 @@ export default function Vouchers() {
               <Ionicons name="ticket-outline" size={64} color={colors.textMuted} />
             </View>
             <Text style={styles.emptyTitle}>No vouchers yet</Text>
-            <Text style={styles.emptySubtitle}>Kamilisha maagizo ili upate vocha</Text>
+            <Text style={styles.emptySubtitle}>Complete orders to earn vouchers</Text>
           </View>
         }
         renderItem={({ item: voucher }) => {
@@ -153,7 +153,7 @@ export default function Vouchers() {
                 <View style={styles.minOrderRow}>
                   <Ionicons name="information-circle-outline" size={16} color={colors.textMuted} />
                   <Text style={styles.minOrder}>
-                    Agizo la chini: TZS {Number(voucher.min_order_amount_tzs).toLocaleString()}
+                    Min order: TZS {Number(voucher.min_order_amount_tzs).toLocaleString()}
                   </Text>
                 </View>
               )}
@@ -169,7 +169,7 @@ export default function Vouchers() {
                   style={({ pressed }) => [styles.copyBtn, pressed && { opacity: 0.8 }]}
                 >
                   <Ionicons name="copy-outline" size={18} color={colors.primary} />
-                  <Text style={styles.copyText}>Nakili Nambari</Text>
+                  <Text style={styles.copyText}>Copy code</Text>
                 </Pressable>
               )}
             </Card>

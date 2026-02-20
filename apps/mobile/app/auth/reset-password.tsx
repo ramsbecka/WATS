@@ -207,7 +207,7 @@ export default function ResetPassword() {
               </View>
               <Text style={styles.title}>Reset Password</Text>
               <Text style={styles.subtitle}>
-                Weka namba ya simu. Tutakutumia code kwa SMS.
+                Enter your phone number. We will send you a code via SMS.
               </Text>
             </View>
 
@@ -265,9 +265,9 @@ export default function ResetPassword() {
                   <Ionicons name="phone-portrait" size={32} color={colors.primary} />
                 </View>
               </View>
-              <Text style={styles.title}>Thibitisha Code</Text>
+              <Text style={styles.title}>Verify Code</Text>
               <Text style={styles.subtitle}>
-                Weka code ya tarakimu 6 iliyotumwa kwa {phoneNumber}
+                Enter the 6-digit code sent to {phoneNumber}
               </Text>
             </View>
 
@@ -356,7 +356,7 @@ export default function ResetPassword() {
             </View>
             <Text style={styles.title}>New Password</Text>
             <Text style={styles.subtitle}>
-              Weka nenosiri jipya la account yako
+              Enter your new account password
             </Text>
           </View>
 

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Package, Plus, MapPin, Calendar } from 'lucide-react';
+import { ArrowLeft, Package, Plus, MapPin, Calendar, CreditCard } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 const ORDER_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'] as const;
@@ -13,6 +13,7 @@ export default function OrderDetail() {
   const id = params?.id as string | undefined;
   const [order, setOrder] = useState<any>(null);
   const [shipments, setShipments] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [creatingShipment, setCreatingShipment] = useState(false);
@@ -37,9 +38,11 @@ export default function OrderDetail() {
         id, status, tracking_number, carrier, estimated_delivery_date, fulfilled_at, delivered_at, created_at,
         shipment_tracking_events(id, status, location, description, notes, created_at)
       `).eq('order_id', id).order('created_at', { ascending: false }),
-    ]).then(([orderRes, shipRes]) => {
+      supabase.from('payments').select('id, provider, status, amount_tzs, provider_reference, created_at').eq('order_id', id).order('created_at', { ascending: false }),
+    ]).then(([orderRes, shipRes, payRes]) => {
       if (!orderRes.error) setOrder(orderRes.data);
       if (!shipRes.error) setShipments(shipRes.data ?? []);
+      if (!payRes.error) setPayments(payRes.data ?? []);
       setLoading(false);
     });
   }, [id]);
@@ -169,6 +172,44 @@ export default function OrderDetail() {
           </pre>
         </div>
       </div>
+      {payments.length > 0 && (
+        <div className="mt-6 rounded-xl border border-slate-200 bg-white shadow-sm">
+          <h2 className="flex items-center gap-2 border-b border-slate-200 px-5 py-3 text-sm font-semibold uppercase tracking-wider text-slate-500">
+            <CreditCard className="h-4 w-4" /> Payment
+          </h2>
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">Provider</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">Status</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-slate-500">Amount (TZS)</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">Receipt / Ref</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {payments.map((p: any) => (
+                <tr key={p.id}>
+                  <td className="px-5 py-3 text-sm text-slate-700">{p.provider || '—'}</td>
+                  <td className="px-5 py-3">
+                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${
+                      p.status === 'completed' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                      p.status === 'failed' ? 'bg-red-50 text-red-800 border-red-200' :
+                      p.status === 'refunded' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                      'bg-slate-50 text-slate-700 border-slate-200'
+                    }`}>
+                      {p.status}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3 text-right text-sm font-medium text-slate-900">{Number(p.amount_tzs).toLocaleString()}</td>
+                  <td className="px-5 py-3 text-sm text-slate-600 font-mono">{p.provider_reference || '—'}</td>
+                  <td className="px-5 py-3 text-sm text-slate-500">{new Date(p.created_at).toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       <div className="mt-6 rounded-xl border border-slate-200 bg-white shadow-sm">
         <h2 className="border-b border-slate-200 px-5 py-3 text-sm font-semibold uppercase tracking-wider text-slate-500">Items</h2>
         <table className="min-w-full divide-y divide-slate-200">

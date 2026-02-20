@@ -21,6 +21,7 @@ import {
   Ticket,
   UserPlus,
   Image as ImageIcon,
+  MessageCircle,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
@@ -41,6 +42,7 @@ const nav = [
   { href: '/vouchers', label: 'Vouchers', Icon: Ticket },
   { href: '/content', label: 'Content', Icon: ImageIcon },
   { href: '/referral-codes', label: 'Referral Codes', Icon: UserPlus },
+  { href: '/support-chat', label: 'Live chat', Icon: MessageCircle },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Animated, ActivityIndicator, Dimensions, ScrollView, Image, StatusBar, Text, ImageSourcePropType } from 'react-native';
 import { colors, spacing, typography } from '@/theme/tokens';
-import { getSplashImages } from '@/api/client';
+import { getSplashImages, subscribeToSplashImages } from '@/api/client';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -26,20 +26,39 @@ export function SplashScreen({ onFinish, autoSkip = false, skipDuration = 5000 }
   const scrollViewRef = useRef<ScrollView>(null);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  useEffect(() => {
-    // Load splash images from database
+  const loadSplash = () => {
     getSplashImages()
       .then((data) => {
-        if (data && data.length > 0) {
-          setImages(data as SplashImage[]);
+        const list = (data ?? []) as SplashImage[];
+        if (list.length > 0) {
+          setImages(list);
+        } else {
+          setImages([]);
         }
         setLoading(false);
       })
       .catch((error) => {
         console.error('Failed to load splash images:', error);
+        setImages([]);
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    loadSplash();
+    const unsubscribe = subscribeToSplashImages(loadSplash);
+    return unsubscribe;
   }, []);
+
+  // When list updates (e.g. admin reordered), show first slide so order matches admin
+  useEffect(() => {
+    if (images.length === 0) return;
+    setCurrentIndex(0);
+    const t = setTimeout(() => {
+      scrollViewRef.current?.scrollTo({ x: 0, animated: false });
+    }, 50);
+    return () => clearTimeout(t);
+  }, [images]);
 
   useEffect(() => {
     if (images.length === 0 && !loading) {

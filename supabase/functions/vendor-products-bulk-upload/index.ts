@@ -1,7 +1,7 @@
 /**
- * Bulk upload products for a shop (duka) – Edge Function
+ * Bulk upload products for a store – Edge Function
  * POST body: { vendor_id: uuid, products: [...] }
- * Admin only: admin anajaza bidhaa mwenyewe.
+ * Admin only: admin uploads products on behalf of the store.
  */
 
 import { getServiceClient, getAuthClient } from '../_shared/db.ts';

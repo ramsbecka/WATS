@@ -2,12 +2,6 @@ import { supabase } from '@/lib/supabase';
 
 const FUNCTIONS_URL = (process.env.EXPO_PUBLIC_SUPABASE_URL ?? '').replace(/\/$/, '') + '/functions/v1';
 
-// Debug: Log functions URL to verify it's correct (only in development)
-if (process.env.NODE_ENV !== 'production') {
-  console.log('[API] Functions URL:', FUNCTIONS_URL);
-  console.log('[API] Supabase URL:', process.env.EXPO_PUBLIC_SUPABASE_URL);
-}
-
 async function getAuthHeaders(): Promise<HeadersInit> {
   const { data: { session } } = await supabase.auth.getSession();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -26,9 +20,6 @@ export async function initiateCheckout(params: {
   (headers as Record<string, string>)['x-idempotency-key'] = idempotencyKey;
   
   const url = `${FUNCTIONS_URL}/checkout-initiate`;
-  console.log('[Checkout] Calling:', url);
-  console.log('[Checkout] Headers:', { ...headers, Authorization: headers.Authorization ? 'Bearer ***' : 'none' });
-  
   try {
     const res = await fetch(url, {
       method: 'POST',
@@ -40,8 +31,6 @@ export async function initiateCheckout(params: {
       }),
     });
     
-    console.log('[Checkout] Response status:', res.status, res.statusText);
-    
     let data;
     try {
       data = await res.json();
@@ -51,18 +40,13 @@ export async function initiateCheckout(params: {
       throw new Error(`Checkout failed: ${res.status} ${res.statusText}. ${text}`);
     }
     
-    console.log('[Checkout] Response data:', data);
-    
     if (!res.ok) {
-      const errorMsg = data.error || data.message || `Checkout failed (${res.status})`;
-      const errorCode = data.code || 'CHECKOUT_ERROR';
-      console.error('[Checkout] Error:', errorCode, errorMsg);
+      const errorMsg = data?.error || data?.message || `Checkout failed (${res.status})`;
+      const errorCode = data?.code || 'CHECKOUT_ERROR';
       throw new Error(`${errorMsg} (${errorCode})`);
     }
-    
     return data;
   } catch (e: any) {
-    console.error('[Checkout] Exception:', e);
     if (e.message) {
       throw e;
     }
@@ -105,6 +89,22 @@ export async function verifyPayment(paymentId: string) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Payment verification failed');
+  return data;
+}
+
+/** Retry M-Pesa STK for an existing order (e.g. user tapped "Retry Payment"). Does not create a new order. */
+export async function retryPayment(orderId: string) {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${FUNCTIONS_URL}/payment-retry`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ order_id: orderId }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    const msg = data?.error || data?.message || `Retry failed (${res.status})`;
+    throw new Error(msg);
+  }
   return data;
 }
 
@@ -153,14 +153,16 @@ export async function getAvailableVouchers(userId: string) {
   return data ?? [];
 }
 
-export async function verifyVoucherCode(code: string) {
-  const { data, error } = await supabase
+/** Verify voucher by code. Pass userId so only the voucher owner can use it (matches server-side checkout). */
+export async function verifyVoucherCode(code: string, userId?: string) {
+  let q = supabase
     .from('vouchers')
-    .select('id, code, discount_percentage, min_order_amount_tzs, max_discount_amount_tzs, is_used, usage_count, max_usage, valid_until')
-    .eq('code', code.toUpperCase())
+    .select('id, code, discount_percentage, discount_amount_tzs, min_order_amount_tzs, max_discount_amount_tzs, is_used, usage_count, max_usage, valid_until')
+    .eq('code', code.toUpperCase().trim())
     .eq('is_used', false)
-    .gte('valid_until', new Date().toISOString())
-    .single();
+    .gte('valid_until', new Date().toISOString());
+  if (userId) q = q.eq('user_id', userId);
+  const { data, error } = await q.single();
   if (error) throw error;
   if (data.usage_count >= data.max_usage) {
     throw new Error('Voucher has reached maximum usage limit');
@@ -808,18 +810,74 @@ export async function isFollowingStore(userId: string, vendorId: string): Promis
   return !!data;
 }
 
-// Splash Images
+// Support / Live chat (mobile ↔ admin)
+const SUPPORT_PHONE = '+255792108835';
+
+export function getSupportPhoneNumber() {
+  return SUPPORT_PHONE;
+}
+
+export async function getOrCreateSupportThread(userId: string) {
+  const { data: existing } = await supabase
+    .from('support_threads')
+    .select('id, status')
+    .eq('user_id', userId)
+    .eq('status', 'open')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (existing) return existing.id;
+  const { data: created, error } = await supabase
+    .from('support_threads')
+    .insert({ user_id: userId, status: 'open' })
+    .select('id')
+    .single();
+  if (error) throw error;
+  return created.id;
+}
+
+export async function getSupportMessages(threadId: string) {
+  const { data, error } = await supabase
+    .from('support_messages')
+    .select('id, sender_type, sender_id, content, created_at')
+    .eq('thread_id', threadId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function sendSupportMessage(threadId: string, userId: string, content: string) {
+  const { error } = await supabase.from('support_messages').insert({
+    thread_id: threadId,
+    sender_type: 'user',
+    sender_id: userId,
+    content: content.trim(),
+  });
+  if (error) throw error;
+  await supabase.from('support_threads').update({ updated_at: new Date().toISOString() }).eq('id', threadId);
+}
+
+export function subscribeToSupportMessages(threadId: string, onMessage: () => void) {
+  const channel = supabase
+    .channel(`support-${threadId}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages', filter: `thread_id=eq.${threadId}` }, () => onMessage())
+    .subscribe();
+  return () => supabase.removeChannel(channel);
+}
+
+// Splash Images (order = admin sort_order; secondary by id for consistency)
 export async function getSplashImages() {
   const { data, error } = await supabase
     .from('splash_images')
     .select('*')
     .eq('is_active', true)
-    .order('sort_order', { ascending: true });
+    .order('sort_order', { ascending: true })
+    .order('id', { ascending: true });
   if (error) throw error;
   return data ?? [];
 }
 
-// Banners
+// Banners (admin-controlled; mobile follows)
 export async function getBanners() {
   const { data, error } = await supabase
     .from('banners')
@@ -828,4 +886,30 @@ export async function getBanners() {
     .order('sort_order', { ascending: true });
   if (error) throw error;
   return data ?? [];
+}
+
+/** Subscribe to banner changes so admin updates are reflected immediately on mobile. */
+export function subscribeToBanners(onChange: () => void) {
+  const channel = supabase
+    .channel('banners-changes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'banners' },
+      () => onChange()
+    )
+    .subscribe();
+  return () => supabase.removeChannel(channel);
+}
+
+/** Subscribe to splash image changes so admin updates are reflected on next app open or splash view. */
+export function subscribeToSplashImages(onChange: () => void) {
+  const channel = supabase
+    .channel('splash_images-changes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'splash_images' },
+      () => onChange()
+    )
+    .subscribe();
+  return () => supabase.removeChannel(channel);
 }
