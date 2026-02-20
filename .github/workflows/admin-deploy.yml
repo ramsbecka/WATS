@@ -111,11 +111,29 @@ jobs:
         with:
           script: |
             const environment = '${{ github.event.inputs.environment }}' || 'production';
-            github.rest.repos.createDeploymentStatus({
+            
+            // Create deployment kwanza ikiwa haipo
+            let deploymentId = context.payload.deployment?.id;
+            
+            if (!deploymentId) {
+              const deployment = await github.rest.repos.createDeployment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: context.ref,
+                environment: environment,
+                description: 'Admin dashboard deployment',
+                auto_merge: false,
+                required_contexts: []
+              });
+              deploymentId = deployment.data.id;
+            }
+            
+            // Create deployment status
+            await github.rest.repos.createDeploymentStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              deployment_id: context.payload.deployment?.id || 0,
+              deployment_id: deploymentId,
               state: 'success',
               environment: environment,
               description: 'Admin dashboard deployed successfully'
-            })
+            });
