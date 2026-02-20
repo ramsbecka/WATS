@@ -36,6 +36,9 @@
         "projectId": "cbd61f57-0c51-4355-9d4b-6043c1b92fc0"
       }
     },
-    "owner": "ramsbecka"
+    "owner": "ramsbecka",
+    "web": {
+      "bundler": "metro"
+    }
   }
 }

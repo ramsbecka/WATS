@@ -4,6 +4,18 @@ Mwongozo kamili wa jinsi ya kutengeneza APK kwa mobile app na kudeploy admin das
 
 ---
 
+## ✅ Deploy readiness – tunaweza kudeploy?
+
+| Sehemu | Build inakwenda? | Deploy inahitaji nini? |
+|--------|-------------------|-------------------------|
+| **Admin (Next.js)** | Ndiyo – `npm run build` inakwenda | **Vercel:** weka GitHub Secrets: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`. **Netlify:** `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`. **GitHub Pages:** haifanyi kazi na config ya sasa (standalone); ikiwa unataka GH Pages, badilisha `next.config.mjs` kuwa `output: 'export'` na jenga tena. |
+| **Mobile (Expo)** | Ndiyo – EAS / local build | **EAS (cloud):** weka GitHub Secrets: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `EXPO_TOKEN`. **Local APK/AAB:** `cd apps/mobile` → `npx expo prebuild --platform android --clean` → Gradle build (tazama chini). |
+| **Supabase** | Migrations + Edge Functions | `supabase link` → `supabase db push` (migrations); `supabase functions deploy <name>` (functions). Weka secrets kwenye Dashboard. |
+
+**Hitimisho:** Tunaweza kudeploy ikiwa umeweka GitHub Secrets kwa platform unayotumia (Vercel/Netlify kwa admin, EAS kwa mobile) na Supabase iko linked na deployed.
+
+---
+
 ## 📱 Mobile App - APK Build
 
 ### Njia ya 1: Kwa kutumia GitHub Actions (Automated)

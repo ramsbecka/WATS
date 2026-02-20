@@ -95,13 +95,15 @@ jobs:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         continue-on-error: true
 
+      # GitHub Pages fallback: inafanya kazi tu ikiwa next.config.mjs ina output: 'export'
+      # (standalone build haitengenezi out/; badilisha config kisha jenga tena)
       - name: Deploy to GitHub Pages (fallback)
         if: steps.check-vercel.outputs.has_vercel == 'false' && steps.check-netlify.outputs.has_netlify == 'false'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./apps/admin/out
-          cname: admin.wats.tz  # Optional: set your custom domain
+          cname: admin.wats.tz
         continue-on-error: true
 
       - name: Create deployment status

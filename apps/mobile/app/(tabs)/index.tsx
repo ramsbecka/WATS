@@ -1,19 +1,24 @@
 import { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Image, FlatList, Dimensions, AppState, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Image, FlatList, Dimensions, useWindowDimensions, Platform, AppState, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/components/ui/Screen';
 import { getCategories, getProducts, getBanners, subscribeToCategories, subscribeToProducts } from '@/api/client';
 import { colors, spacing, typography, radius } from '@/theme/tokens';
 import { useAuthStore } from '@/store/auth';
+import { useWebLayout } from '@/hooks/useIsWeb';
 import ProductRecommendations from '@/components/ai/ProductRecommendations';
 import type { Category, Product } from '@/types';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function Home() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const { width: winWidth } = useWindowDimensions();
+  const { isWeb, contentWidth, numColumns } = useWebLayout();
+  const SCREEN_WIDTH = Platform.OS === 'web' ? winWidth : Dimensions.get('window').width;
+  const contentMaxWidth = isWeb ? Math.min(contentWidth, 1000) : SCREEN_WIDTH;
+  const cardSize = (contentMaxWidth - spacing.lg * 2 - spacing.md * (numColumns - 1)) / numColumns;
+  const bannerWidth = contentMaxWidth - spacing.lg * 2;
   const [categories, setCategories] = useState<Category[]>([]);
   const [flashSaleProducts, setFlashSaleProducts] = useState<Product[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
@@ -232,7 +237,7 @@ export default function Home() {
     return (
       <Pressable 
         onPress={() => handleBannerPress(banner)} 
-        style={styles.bannerPressable}
+        style={[styles.bannerPressable, { width: bannerWidth }]}
       >
         <View style={styles.bannerItemContainer}>
           {banner.image_url ? (
@@ -260,7 +265,6 @@ export default function Home() {
   };
 
   const onBannerScroll = (event: any) => {
-    const bannerWidth = SCREEN_WIDTH - (spacing.lg * 2);
     const itemWidth = bannerWidth + spacing.md;
     const index = Math.round(event.nativeEvent.contentOffset.x / itemWidth);
     if (index !== currentBannerIndex && index >= 0 && index < banners.length) {
@@ -269,12 +273,7 @@ export default function Home() {
   };
 
   const renderBanner = () => {
-    if (banners.length === 0) {
-                // No banners to display
-      return null;
-    }
-
-    const bannerWidth = SCREEN_WIDTH - (spacing.lg * 2);
+    if (banners.length === 0) return null;
 
     return (
       <View style={styles.bannerContainer}>
@@ -329,7 +328,7 @@ export default function Home() {
           <Text style={styles.sectionTitle}>WATS Picks</Text>
           <View style={styles.categoryGrid}>
             {[1, 2, 3, 4].map((i) => (
-              <View key={i} style={styles.categoryCard}>
+              <View key={i} style={[styles.categoryCard, { width: cardSize }]}>
                 <View style={[styles.categoryCardImage, styles.placeholderImage]} />
                 <View style={styles.categoryCardNamePlaceholder} />
               </View>
@@ -350,10 +349,10 @@ export default function Home() {
           </Pressable>
         </View>
         <View style={styles.categoryGrid}>
-          {categories.slice(0, 4).map((cat) => (
+          {categories.slice(0, numColumns * 2).map((cat) => (
             <Pressable
               key={cat.id}
-              style={styles.categoryCard}
+              style={[styles.categoryCard, { width: cardSize }]}
               onPress={() => router.push(`/(tabs)/products?category=${cat.id}`)}
             >
               {cat.image_url ? (
@@ -395,7 +394,7 @@ export default function Home() {
             return (
               <Pressable
                 key={product.id}
-                style={styles.productCard}
+                style={[styles.productCard, { width: cardSize }]}
                 onPress={() => router.push(`/products/${product.id}`)}
               >
                 <View style={styles.productImageContainer}>
@@ -438,22 +437,26 @@ export default function Home() {
     );
   }
 
+  const webContentStyle = isWeb ? { maxWidth: contentMaxWidth, alignSelf: 'center' as const, width: '100%' } : null;
+
   return (
     <Screen edges={['top']}>
       <ScrollView
         ref={scrollViewRef}
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, isWeb && styles.scrollContentWeb]}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
       >
-        {renderSearchBar()}
-        {renderBanner()}
-        {renderCategoryIcons()}
-        {renderFlashSale()}
-        {renderWATSPicks()}
-        {user && <ProductRecommendations limit={8} title="AI Recommended for You" />}
-        {renderProductGrid()}
+        <View style={webContentStyle}>
+          {renderSearchBar()}
+          {renderBanner()}
+          {renderCategoryIcons()}
+          {renderFlashSale()}
+          {renderWATSPicks()}
+          {user && <ProductRecommendations limit={8} title="AI Recommended for You" />}
+          {renderProductGrid()}
+        </View>
         <View style={styles.bottomSpacer} />
       </ScrollView>
     </Screen>
@@ -466,6 +469,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 100,
+  },
+  scrollContentWeb: {
+    alignItems: 'center',
   },
   loadingContainer: {
     flex: 1,
@@ -529,7 +535,6 @@ const styles = StyleSheet.create({
     paddingRight: 0,
   },
   bannerPressable: {
-    width: SCREEN_WIDTH - (spacing.lg * 2),
     marginRight: spacing.md,
   },
   bannerItemContainer: {
@@ -712,7 +717,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   categoryCard: {
-    width: (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 2,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     overflow: 'hidden',
@@ -780,7 +784,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   productCard: {
-    width: (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 2,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     padding: spacing.sm,

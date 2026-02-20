@@ -7,11 +7,17 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useCartStore } from '@/store/cart';
 import { useAuthStore } from '@/store/auth';
+import { useWebLayout } from '@/hooks/useIsWeb';
 import { getOrCreateCart, getCartItems, removeCartItem } from '@/api/client';
 import { colors, spacing, typography, radius } from '@/theme/tokens';
 
+const WEB_MAX = 640;
+
 export default function Cart() {
   const { user } = useAuthStore();
+  const { isWeb, contentWidth } = useWebLayout();
+  const maxW = isWeb ? Math.min(contentWidth, WEB_MAX) : undefined;
+  const webWrap = isWeb && maxW ? { maxWidth: maxW, alignSelf: 'center' as const, width: '100%' } : undefined;
   const { items, total, count, removeItem, setItems } = useCartStore();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -112,13 +118,14 @@ export default function Cart() {
 
   return (
     <Screen edges={['top']}>
-      <FlatList
-        data={items}
-        keyExtractor={(i) => i.id}
-        contentContainerStyle={styles.list}
-        ListHeaderComponent={renderHeader}
-        ListFooterComponent={renderFooter}
-        renderItem={({ item }) => (
+      <View style={[styles.cartWrap, webWrap]}>
+        <FlatList
+          data={items}
+          keyExtractor={(i) => i.id}
+          contentContainerStyle={styles.list}
+          ListHeaderComponent={renderHeader}
+          ListFooterComponent={renderFooter}
+          renderItem={({ item }) => (
           <Card style={styles.row}>
             <View style={styles.rowContent}>
               <Text style={styles.itemName} numberOfLines={2}>{item.product?.name_en ?? item.product_id}</Text>
@@ -133,12 +140,14 @@ export default function Cart() {
             </Pressable>
           </Card>
         )}
-      />
+        />
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  cartWrap: { flex: 1 },
   header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm },
   title: { ...typography.title, color: colors.textPrimary },
   count: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 2 },

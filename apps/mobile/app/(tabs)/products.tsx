@@ -85,10 +85,8 @@ export default function ProductsTab() {
       const categories = await getCategories(false); // Disable cache to get fresh data
       setMainCategories(categories);
       
-      // Set first category as selected if none selected
-      if (!selectedCategoryId && categories.length > 0) {
-        setSelectedCategoryId(categories[0].id);
-      }
+      // "All" is selected by default (selectedCategoryId remains null)
+      // User can select a category from the menu if they want
     } catch (error) {
       console.error('Error loading categories:', error);
     } finally {
