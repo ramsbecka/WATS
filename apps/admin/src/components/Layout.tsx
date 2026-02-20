@@ -56,7 +56,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           className="flex h-14 items-center gap-3 border-b border-slate-100 px-5 transition-colors hover:bg-slate-50/50"
         >
           <Image
-            src="/logo.jpeg"
+            src="/logo.png"
             alt="WATS"
             width={32}
             height={32}

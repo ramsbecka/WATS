@@ -51,7 +51,7 @@ export default function Login() {
       <div className="w-full max-w-md rounded-2xl border border-slate-200/90 bg-white p-8 shadow-card-hover">
         <div className="mb-8 flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-primary/10 ring-2 ring-primary/20">
-            <Image src="/logo.jpeg" alt="WATS" width={40} height={40} className="rounded-lg object-cover" />
+            <Image src="/logo.png" alt="WATS" width={40} height={40} className="rounded-lg object-cover" />
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight text-slate-900">WATS Admin</h1>
