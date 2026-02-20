@@ -466,12 +466,20 @@ export default function Home() {
 const styles = StyleSheet.create({
   scroll: {
     flex: 1,
+    ...(Platform.OS === 'web' ? {
+      width: '100%',
+      height: '100%',
+    } : {}),
   },
   scrollContent: {
     paddingBottom: 100,
   },
   scrollContentWeb: {
     alignItems: 'center',
+    ...(Platform.OS === 'web' ? {
+      minHeight: '100%',
+      width: '100%',
+    } : {}),
   },
   loadingContainer: {
     flex: 1,

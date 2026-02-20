@@ -1,21 +1,40 @@
 import { useEffect } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 import { View, Text, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { useAuthStore } from '@/store/auth';
 import { colors, typography } from '@/theme/tokens';
 
 export default function Index() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, loading } = useAuthStore();
 
   useEffect(() => {
-    if (loading || !user) return;
-    router.replace('/(tabs)');
-  }, [loading, user]);
-
-  useEffect(() => {
-    if (!loading && !user) router.replace('/auth');
-  }, [loading, user]);
+    if (loading) return;
+    
+    // Redirect based on auth state
+    if (user) {
+      // Check if already on tabs route
+      if (pathname?.startsWith('/(tabs)')) return;
+      
+      // Use push instead of replace for web compatibility
+      if (Platform.OS === 'web') {
+        router.push('/(tabs)');
+      } else {
+        router.replace('/(tabs)');
+      }
+    } else {
+      // Check if already on auth route
+      if (pathname?.startsWith('/auth')) return;
+      
+      // Use push instead of replace for web compatibility
+      if (Platform.OS === 'web') {
+        router.push('/auth');
+      } else {
+        router.replace('/auth');
+      }
+    }
+  }, [loading, user, router, pathname]);
 
   // Loading: show spinner (use View + minHeight so it's visible on web too)
   if (loading) {

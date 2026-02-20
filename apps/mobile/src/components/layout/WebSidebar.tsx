@@ -67,7 +67,14 @@ const styles = StyleSheet.create({
     borderRightColor: colors.border,
     paddingTop: spacing.xl,
     paddingBottom: spacing.lg,
-    ...(Platform.OS === 'web' ? { minHeight: '100vh' } : {}),
+    ...(Platform.OS === 'web' ? { 
+      minHeight: '100vh',
+      height: '100vh',
+      position: 'fixed' as any,
+      left: 0,
+      top: 0,
+      zIndex: 100,
+    } : {}),
   },
   logoBlock: {
     paddingHorizontal: spacing.lg,

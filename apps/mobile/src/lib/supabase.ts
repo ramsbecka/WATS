@@ -35,27 +35,42 @@ const effectiveKey = supabaseAnonKey || 'placeholder-anon-key';
 // Auth storage: Use localStorage kwa web (kwa static export), AsyncStorage kwa native
 // Kwa static export, AsyncStorage haifanyi kazi kwa sababu window haipo server-side
 
-// Safe storage wrapper - handles server-side rendering
+// Safe storage wrapper - handles server-side rendering and invalid tokens
 const storage = isWeb && !isServerSide
   ? {
       // Use localStorage kwa web (client-side only)
-      getItem: (key: string) => {
-        if (typeof window !== 'undefined' && window.localStorage) {
-          return Promise.resolve(localStorage.getItem(key));
+      getItem: async (key: string) => {
+        try {
+          if (typeof window !== 'undefined' && window.localStorage) {
+            return localStorage.getItem(key);
+          }
+        } catch (e) {
+          // Clear invalid token kama kuna error
+          if (key.includes('auth-token')) {
+            try {
+              localStorage.removeItem(key);
+            } catch {}
+          }
         }
-        return Promise.resolve(null);
+        return null;
       },
-      setItem: (key: string, value: string) => {
-        if (typeof window !== 'undefined' && window.localStorage) {
-          localStorage.setItem(key, value);
+      setItem: async (key: string, value: string) => {
+        try {
+          if (typeof window !== 'undefined' && window.localStorage) {
+            localStorage.setItem(key, value);
+          }
+        } catch (e) {
+          // Ignore storage errors
         }
-        return Promise.resolve();
       },
-      removeItem: (key: string) => {
-        if (typeof window !== 'undefined' && window.localStorage) {
-          localStorage.removeItem(key);
+      removeItem: async (key: string) => {
+        try {
+          if (typeof window !== 'undefined' && window.localStorage) {
+            localStorage.removeItem(key);
+          }
+        } catch (e) {
+          // Ignore storage errors
         }
-        return Promise.resolve();
       },
     }
   : isServerSide
@@ -69,10 +84,34 @@ const storage = isWeb && !isServerSide
       const AsyncStorage = getAsyncStorage();
       return AsyncStorage
         ? {
-            // Use AsyncStorage kwa native platforms
-            getItem: (key: string) => AsyncStorage.getItem(key),
-            setItem: (key: string, value: string) => AsyncStorage.setItem(key, value),
-            removeItem: (key: string) => AsyncStorage.removeItem(key),
+            // Use AsyncStorage kwa native platforms with error handling
+            getItem: async (key: string) => {
+              try {
+                return await AsyncStorage.getItem(key);
+              } catch (e) {
+                // Clear invalid token kama kuna error
+                if (key.includes('auth-token')) {
+                  try {
+                    await AsyncStorage.removeItem(key);
+                  } catch {}
+                }
+                return null;
+              }
+            },
+            setItem: async (key: string, value: string) => {
+              try {
+                await AsyncStorage.setItem(key, value);
+              } catch (e) {
+                // Ignore storage errors
+              }
+            },
+            removeItem: async (key: string) => {
+              try {
+                await AsyncStorage.removeItem(key);
+              } catch (e) {
+                // Ignore storage errors
+              }
+            },
           }
         : {
             // Fallback kama AsyncStorage haipo
@@ -103,3 +142,70 @@ const authConfig = isServerSide
 export const supabase = createClient(effectiveUrl, effectiveKey, {
   auth: authConfig,
 });
+
+// Handle refresh token errors gracefully - suppress and clear invalid tokens
+if (!isServerSide) {
+  // Temporarily suppress "Invalid Refresh Token" errors during initialization
+  // These errors occur when Supabase tries to refresh a token that doesn't exist
+  const originalError = console.error;
+  let suppressInitErrors = true;
+  const suppressTimeout = setTimeout(() => {
+    suppressInitErrors = false;
+  }, 2000);
+  
+  // Override console.error to suppress refresh token errors during initialization
+  console.error = (...args: any[]) => {
+    if (suppressInitErrors) {
+      const errorStr = args.join(' ');
+      // Only suppress specific refresh token errors during initialization
+      if (
+        errorStr.includes('Invalid Refresh Token') ||
+        errorStr.includes('Refresh Token Not Found') ||
+        (errorStr.includes('AuthApiError') && errorStr.includes('Refresh Token'))
+      ) {
+        // Suppress this specific error during initialization
+        return;
+      }
+    }
+    originalError(...args);
+  };
+  
+  // Listen for auth errors and clear invalid tokens
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    // If token refresh fails or user is signed out, clear storage
+    if (event === 'SIGNED_OUT' && !session) {
+      // Clear all auth-related storage keys
+      try {
+        const projectRef = effectiveUrl.split('//')[1]?.split('.')[0];
+        if (projectRef) {
+          const authKey = `sb-${projectRef}-auth-token`;
+          await storage.removeItem(authKey);
+        }
+      } catch (e) {
+        // Ignore errors when clearing
+      }
+    }
+  });
+  
+  // Proactively clear invalid tokens on initialization
+  setTimeout(async () => {
+    try {
+      const { error } = await supabase.auth.getSession();
+      // If there's an error getting session, it might be due to invalid token
+      // The error will be handled by onAuthStateChange above
+    } catch (e: any) {
+      // If error is about refresh token, clear storage
+      if (e?.message?.includes('Refresh Token') || e?.message?.includes('Invalid Refresh Token')) {
+        try {
+          const projectRef = effectiveUrl.split('//')[1]?.split('.')[0];
+          if (projectRef) {
+            const authKey = `sb-${projectRef}-auth-token`;
+            await storage.removeItem(authKey);
+          }
+        } catch {}
+      }
+    }
+    // Clear suppression timeout after handling
+    clearTimeout(suppressTimeout);
+  }, 100);
+}

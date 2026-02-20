@@ -18,19 +18,43 @@ export default function RootLayout() {
       done = true;
       setLoading(false);
     };
-    // Timeout: if getSession hangs (e.g. placeholder URL / no network), show login after 2.5s
-    const t = setTimeout(finish, 2500);
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Timeout: if getSession hangs (e.g. placeholder URL / no network), show login faster on web
+    const timeout = Platform.OS === 'web' ? 1000 : 2500;
+    const t = setTimeout(finish, timeout);
+    
+    // Try to get session with race condition protection
+    Promise.race([
+      supabase.auth.getSession(),
+      new Promise((resolve) => setTimeout(() => resolve({ data: { session: null } }), timeout - 100))
+    ]).then((result: any) => {
+      const { data: { session } } = result || { data: { session: null } };
       setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
-      else setProfile(null);
+      if (session?.user) {
+        // Don't await - let it load in background
+        fetchProfile(session.user.id).catch(() => {
+          // Silently handle profile fetch errors
+        });
+      } else {
+        setProfile(null);
+      }
       finish();
-    }).catch(() => finish()).finally(() => clearTimeout(t));
+    }).catch(() => {
+      // On error, assume no session
+      setUser(null);
+      setProfile(null);
+      finish();
+    }).finally(() => clearTimeout(t));
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
-      else setProfile(null);
+      if (session?.user) {
+        // Don't await - let it load in background
+        fetchProfile(session.user.id).catch(() => {
+          // Silently handle profile fetch errors
+        });
+      } else {
+        setProfile(null);
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -61,6 +85,13 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
-    ...(Platform.OS === 'web' ? { minHeight: '100vh', height: '100vh' } : {}),
+    ...(Platform.OS === 'web' ? { 
+      minHeight: '100vh', 
+      height: '100vh',
+      width: '100%',
+      position: 'relative',
+      display: 'flex',
+      flexDirection: 'column',
+    } : {}),
   },
 });

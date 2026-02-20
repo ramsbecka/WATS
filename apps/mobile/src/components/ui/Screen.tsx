@@ -24,6 +24,13 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
-    ...(Platform.OS === 'web' ? { minHeight: '100vh' } : {}),
+    ...(Platform.OS === 'web' ? { 
+      minHeight: '100vh',
+      height: '100vh',
+      width: '100%',
+      position: 'relative',
+      display: 'flex',
+      flexDirection: 'column',
+    } : {}),
   },
 });

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Animated, ActivityIndicator, Dimensions, ScrollView, Image, StatusBar } from 'react-native';
-import { colors, spacing } from '@/theme/tokens';
+import { View, StyleSheet, Animated, ActivityIndicator, Dimensions, ScrollView, Image, StatusBar, Text, ImageSourcePropType } from 'react-native';
+import { colors, spacing, typography } from '@/theme/tokens';
 import { getSplashImages } from '@/api/client';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -84,17 +84,27 @@ export function SplashScreen({ onFinish, autoSkip = false, skipDuration = 5000 }
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={styles.splashContainer}>
+        <View style={styles.logoContainer}>
+          <Text style={styles.logoText}>WATS</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.onPrimary} />
+        </View>
       </View>
     );
   }
 
   if (images.length === 0) {
-    // No splash images, show empty screen (will auto-finish via useEffect above)
+    // No splash images, show logo with single color background
     return (
-      <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-        <View style={styles.emptyContainer} />
+      <Animated.View style={[styles.splashContainer, { opacity: fadeAnim }]}>
+        <View style={styles.logoContainer}>
+          <Text style={styles.logoText}>WATS</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.onPrimary} />
+        </View>
       </Animated.View>
     );
   }
@@ -143,6 +153,36 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+  },
+  splashContainer: {
+    flex: 1,
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xxl,
+  },
+  logoText: {
+    ...typography.hero,
+    fontSize: 48,
+    fontWeight: '800',
+    color: colors.onPrimary,
+    letterSpacing: 2,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.xl,
   },
   scrollView: {
     flex: 1,
