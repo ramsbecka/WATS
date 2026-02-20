@@ -136,10 +136,9 @@ npm run dev
   Full payment flow: **[docs/PAYMENT_FLOW.md](docs/PAYMENT_FLOW.md)**.
 
 ### Admin (Vercel / Netlify)
-- **Build command:** `cd apps/admin && npm install && npm run build`
-- **Output directory:** `apps/admin/.next` (or use `next build` default)
+- **Root Directory:** Set to **`apps/admin`** in Vercel (Settings → General). Otherwise you get 404 NOT_FOUND. See [docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md).
+- **Build:** Vercel auto-detects Next.js when root is `apps/admin`; no custom build command needed.
 - **Env vars:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- **Root:** Set project root to repo root so `apps/admin` is available.
 
 ### Mobile (Expo EAS)
 - Install EAS CLI: `npm i -g eas-cli`; login: `eas login`.

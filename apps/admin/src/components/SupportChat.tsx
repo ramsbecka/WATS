@@ -94,7 +94,9 @@ export default function SupportChat() {
           .then(({ data }) => data && setMessages(data));
       })
       .subscribe();
-    return () => supabase.removeChannel(channel);
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, [selectedId]);
 
   const sendReply = async () => {
