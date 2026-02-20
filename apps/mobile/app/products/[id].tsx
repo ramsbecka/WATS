@@ -254,7 +254,7 @@ export default function ProductDetail() {
         const missingAttributes = allAttributes.filter((attr) => !selectedOptions[attr.attribute.id]);
         if (missingAttributes.length > 0) {
           const missingNames = missingAttributes.map((attr) => attr.attribute.name_en || '').join(', ');
-          Alert.alert('Chagua variant', `Tafadhali chagua: ${missingNames}`);
+          Alert.alert('Choose variant', `Please select: ${missingNames}`);
           return;
         }
         
@@ -288,7 +288,7 @@ export default function ProductDetail() {
           }
           return;
         } else {
-          Alert.alert('Chagua variant', 'Variant iliyochaguliwa haipatikani. Tafadhali chagua tena.');
+          Alert.alert('Choose variant', 'Selected variant is no longer available. Please choose again.');
           return;
         }
       }
@@ -296,7 +296,7 @@ export default function ProductDetail() {
       // Verify selected variant exists and is active
       const selectedVariantObj = variants.find((v: any) => v.id === selectedVariant);
       if (!selectedVariantObj || !selectedVariantObj.is_active) {
-        Alert.alert('Variant si sahihi', 'Tafadhali chagua variant nyingine.');
+        Alert.alert('Invalid variant', 'Please choose another variant.');
         setSelectedVariant(null);
         return;
       }
@@ -448,7 +448,7 @@ export default function ProductDetail() {
           )}
           {variants.length > 0 && (
             <Card style={styles.variantCard}>
-              <Text style={styles.variantLabel}>Chagua variant</Text>
+              <Text style={styles.variantLabel}>Choose variant</Text>
               {getAttributesWithOptions().map(({ attribute, options }) => {
                 const currentSelectedOption = selectedOptions[attribute.id];
                 return (
@@ -492,7 +492,7 @@ export default function ProductDetail() {
               {selectedVariant && (
                 <View style={styles.selectedVariantInfo}>
                   <Text style={styles.selectedVariantText}>
-                    Imechaguliwa: {getVariantDisplayName(variants.find((v: any) => v.id === selectedVariant))}
+                    Selected: {getVariantDisplayName(variants.find((v: any) => v.id === selectedVariant))}
                   </Text>
                   <Text style={styles.selectedVariantPrice}>
                     TZS {Number(variants.find((v: any) => v.id === selectedVariant)?.price_tzs || 0).toLocaleString()}
@@ -592,7 +592,7 @@ export default function ProductDetail() {
                   title="Submit"
                   onPress={async () => {
                     if (reviewRating === 0) {
-                      Alert.alert('Required', 'Tafadhali chagua rating.');
+                      Alert.alert('Required', 'Please select a rating.');
                       return;
                     }
                     try {
@@ -648,7 +648,7 @@ export default function ProductDetail() {
         {/* Product Features Section */}
         {product.product_features && product.product_features.length > 0 && (
           <Card style={styles.featuresCard}>
-            <Text style={styles.featuresTitle}>Maelezo ya Bidhaa</Text>
+            <Text style={styles.featuresTitle}>Product details</Text>
             <View style={styles.featuresList}>
               {product.product_features.map((feature: any, idx: number) => {
                 const title = feature.title_en || '';

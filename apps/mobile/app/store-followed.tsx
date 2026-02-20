@@ -6,7 +6,7 @@ import { Screen } from '@/components/ui/Screen';
 import { Card } from '@/components/ui/Card';
 import { useAuthStore } from '@/store/auth';
 import { getFollowedStores, unfollowStore } from '@/api/client';
-import { colors, spacing, typography, radius } from '@/theme/tokens';
+import { colors, spacing, typography, radius, shadows } from '@/theme/tokens';
 
 export default function StoreFollowed() {
   const router = useRouter();
@@ -72,13 +72,20 @@ export default function StoreFollowed() {
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.title}>Store Followed</Text>
+        <View style={styles.headerContent}>
+          <Ionicons name="storefront" size={24} color={colors.primary} />
+          <Text style={styles.title}>Followed Stores</Text>
+        </View>
+        <View style={styles.placeholder} />
       </View>
 
       {stores.length === 0 ? (
         <View style={styles.centered}>
-          <Ionicons name="storefront-outline" size={64} color={colors.textMuted} />
-          <Text style={styles.emptyText}>No stores followed</Text>
+          <View style={styles.emptyIconContainer}>
+            <Ionicons name="storefront-outline" size={64} color={colors.textMuted} />
+          </View>
+          <Text style={styles.emptyTitle}>No followed stores</Text>
+          <Text style={styles.emptySubtitle}>Fuata maduka ili kupata arifa za bidhaa mpya</Text>
         </View>
       ) : (
         <FlatList
@@ -106,15 +113,21 @@ export default function StoreFollowed() {
                     </View>
                   )}
                   <View style={styles.storeInfo}>
-                    <Text style={styles.storeName}>{vendor.business_name}</Text>
-                    <Text style={styles.storePhone}>{vendor.contact_phone}</Text>
+                    <View style={styles.storeNameRow}>
+                      <Ionicons name="storefront" size={18} color={colors.primary} />
+                      <Text style={styles.storeName}>{vendor.business_name}</Text>
+                    </View>
+                    <View style={styles.storePhoneRow}>
+                      <Ionicons name="call-outline" size={16} color={colors.textMuted} />
+                      <Text style={styles.storePhone}>{vendor.contact_phone}</Text>
+                    </View>
                   </View>
                 </Pressable>
                 <Pressable
                   onPress={() => handleUnfollow(vendor.id)}
                   style={styles.unfollowBtn}
                 >
-                  <Ionicons name="heart" size={20} color={colors.error} />
+                  <Ionicons name="heart" size={24} color={colors.error} />
                 </Pressable>
               </Card>
             );
@@ -136,22 +149,54 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
+    ...shadows.sm,
   },
   backBtn: {
     padding: spacing.xs,
     marginLeft: -spacing.xs,
   },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flex: 1,
+    justifyContent: 'center',
+  },
   title: {
     ...typography.heading,
     color: colors.textPrimary,
-    flex: 1,
-    textAlign: 'center',
+    fontWeight: '700',
+  },
+  placeholder: {
+    width: 40,
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xl,
+  },
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: colors.borderLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  emptyTitle: {
+    ...typography.heading,
+    color: colors.textPrimary,
+    marginTop: spacing.md,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  emptySubtitle: {
+    ...typography.body,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+    textAlign: 'center',
   },
   emptyText: {
     ...typography.body,
@@ -166,7 +211,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.md,
-    padding: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    ...shadows.md,
   },
   storeContent: {
     flex: 1,
@@ -174,9 +221,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   storeImage: {
-    width: 60,
-    height: 60,
-    borderRadius: radius.md,
+    width: 70,
+    height: 70,
+    borderRadius: radius.lg,
     backgroundColor: colors.borderLight,
     marginRight: spacing.md,
   },
@@ -187,17 +234,30 @@ const styles = StyleSheet.create({
   storeInfo: {
     flex: 1,
   },
+  storeNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
   storeName: {
     ...typography.subheading,
     color: colors.textPrimary,
     fontWeight: '600',
-    marginBottom: spacing.xs,
+    flex: 1,
+  },
+  storePhoneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   storePhone: {
     ...typography.body,
     color: colors.textMuted,
+    flex: 1,
   },
   unfollowBtn: {
     padding: spacing.sm,
+    marginLeft: spacing.xs,
   },
 });

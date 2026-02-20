@@ -284,7 +284,7 @@ export default function ProductVariants({ productId, productImages = [] }: Props
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Variants (Ukubwa, Rangi, n.k.)</h2>
-          <p className="mt-0.5 text-xs text-slate-500">Ongeza variants za bidhaa (k.m. Size: L, Color: Red) na bei tofauti</p>
+          <p className="mt-0.5 text-xs text-slate-500">Add product variants (e.g. Size: L, Color: Red) with different prices</p>
         </div>
         <button
           type="button"
@@ -295,7 +295,7 @@ export default function ProductVariants({ productId, productImages = [] }: Props
         </button>
       </div>
       {variants.length === 0 ? (
-        <p className="text-sm text-slate-500">Hakuna variants. Bofya &quot;Add variant&quot; kuongeza.</p>
+        <p className="text-sm text-slate-500">No variants. Click &quot;Add variant&quot; to add.</p>
       ) : (
         <div className="space-y-4">
           {variants.map((variant, index) => (
@@ -359,7 +359,7 @@ export default function ProductVariants({ productId, productImages = [] }: Props
                 </div>
               </div>
               <div className="mb-3">
-                <label className="block text-xs font-medium text-slate-600 mb-2">Chagua attributes (Size, Color, n.k.)</label>
+                <label className="block text-xs font-medium text-slate-600 mb-2">Select attributes (Size, Color, etc.)</label>
                 <div className="space-y-3">
                   {attributes.map((attr) => {
                     const options = optionsByAttribute[attr.id] ?? [];
@@ -393,8 +393,8 @@ export default function ProductVariants({ productId, productImages = [] }: Props
                 </div>
               </div>
               <div className="mb-3">
-                <label className="block text-xs font-medium text-slate-600 mb-2">Picha za Variant</label>
-                <p className="mb-2 text-xs text-slate-500">Chagua picha kutoka product images au pakia picha mpya</p>
+                <label className="block text-xs font-medium text-slate-600 mb-2">Variant images</label>
+                <p className="mb-2 text-xs text-slate-500">Choose image from product images or upload a new one</p>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {productImages.length > 0 && (
                     <button
@@ -402,11 +402,11 @@ export default function ProductVariants({ productId, productImages = [] }: Props
                       onClick={() => setShowImageSelector({ variantIndex: index, show: !showImageSelector.show || showImageSelector.variantIndex !== index })}
                       className="inline-flex items-center gap-1 rounded-lg border border-primary bg-white px-3 py-2 text-sm font-medium text-primary hover:bg-primary/5"
                     >
-                      <ImagePlus className="h-4 w-4" /> Chagua kutoka Product Images
+                      <ImagePlus className="h-4 w-4" /> Choose from Product Images
                     </button>
                   )}
                   <label className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                    <Upload className="h-4 w-4" /> Upload images mpya
+                    <Upload className="h-4 w-4" /> Upload new images
                     <input
                       type="file"
                       accept="image/*"
@@ -420,13 +420,13 @@ export default function ProductVariants({ productId, productImages = [] }: Props
                 {showImageSelector.show && showImageSelector.variantIndex === index && productImages.length > 0 && (
                   <div className="mb-3 rounded-lg border border-slate-200 bg-white p-3">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-700">Chagua picha kutoka product images:</span>
+                      <span className="text-xs font-medium text-slate-700">Choose image from product images:</span>
                       <button
                         type="button"
                         onClick={() => setShowImageSelector({ variantIndex: -1, show: false })}
                         className="text-xs text-slate-500 hover:text-slate-700"
                       >
-                        Funga
+                        Close
                       </button>
                     </div>
                     <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">

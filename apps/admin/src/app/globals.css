@@ -9,13 +9,29 @@
     min-height: 100vh;
   }
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply bg-slate-100/80 text-slate-900 antialiased;
   }
 }
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
 }
 
 input:focus,
@@ -25,6 +41,25 @@ button:focus-visible {
   @apply outline-none ring-2 ring-primary/40 ring-offset-2;
 }
 
+/* Table */
+.table-row-hover tbody tr {
+  @apply transition-colors duration-100;
+}
 .table-row-hover tbody tr:hover {
-  @apply bg-slate-50/80;
+  @apply bg-primary/5;
+}
+
+/* Scrollbar */
+.overflow-auto::-webkit-scrollbar,
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.overflow-auto::-webkit-scrollbar-track,
+.overflow-y-auto::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+.overflow-auto::-webkit-scrollbar-thumb,
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-slate-300 hover:bg-slate-400;
 }

@@ -30,7 +30,7 @@ export default function Login() {
     try {
       const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
       if (err) throw err;
-      // Subiri session kusasishwa kwenye AuthProvider kabla ya redirect (epuka kurudishwa /login)
+      // Wait for session to update in AuthProvider before redirect
       if (data?.session) {
         await new Promise((r) => setTimeout(r, 350));
       }
@@ -47,13 +47,15 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <div className="mb-6 flex items-center gap-3">
-          <Image src="/logo.jpeg" alt="WATS" width={48} height={48} className="shrink-0 rounded-xl" />
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-100 via-slate-50 to-primary/5 px-4">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200/90 bg-white p-8 shadow-card-hover">
+        <div className="mb-8 flex items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-primary/10 ring-2 ring-primary/20">
+            <Image src="/logo.jpeg" alt="WATS" width={40} height={40} className="rounded-lg object-cover" />
+          </div>
           <div>
-            <h1 className="text-xl font-semibold text-slate-900">WATS</h1>
-            <p className="text-sm text-slate-500">Admin dashboard</p>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">WATS Admin</h1>
+            <p className="text-sm text-slate-500">Sign in to continue</p>
           </div>
         </div>
         {!hasValidSupabase && (
@@ -66,12 +68,12 @@ export default function Login() {
             <div className="flex items-start gap-2">
               <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
               <div className="min-w-0 flex-1 space-y-2">
-                <p className="font-medium">Akaunti haijawekwa kama admin.</p>
-                <p>Weka email yako kwenye uga wa Email hapa chini, nakili SQL iliyo chini, uendeshe kwenye <strong>Supabase → SQL Editor</strong>, kisha ingia tena.</p>
-                <pre className="overflow-x-auto rounded bg-amber-100/80 p-2.5 text-xs font-mono select-all whitespace-pre-wrap break-all" title="Nakili na uendeshe kwenye SQL Editor">
-                  {`SELECT public.grant_admin_by_email('${email || 'email-yako@example.com'}');`}
+                <p className="font-medium">This account is not set as admin.</p>
+                <p>Enter your email in the Email field below, copy the SQL below, run it in <strong>Supabase → SQL Editor</strong>, then sign in again.</p>
+                <pre className="overflow-x-auto rounded bg-amber-100/80 p-2.5 text-xs font-mono select-all whitespace-pre-wrap break-all" title="Copy and run in SQL Editor">
+                  {`SELECT public.grant_admin_by_email('${email || 'your-email@example.com'}');`}
                 </pre>
-                <p className="text-xs text-amber-800">Email inajazwa kiotomatiki unapoandika kwenye uga wa Email hapa chini.</p>
+                <p className="text-xs text-amber-800">Email is filled automatically when you type in the Email field below.</p>
               </div>
             </div>
           </div>
@@ -133,9 +135,9 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading || !hasValidSupabase}
-            className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-dark disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-2"
+            className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-dark hover:shadow-md disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-2"
           >
-            {loading ? 'Signing in…' : !hasValidSupabase ? 'Unganisha Supabase kwanza' : 'Sign in'}
+            {loading ? 'Signing in…' : !hasValidSupabase ? 'Connect Supabase first' : 'Sign in'}
           </button>
         </form>
       </div>

@@ -73,7 +73,7 @@ export default function Payouts() {
           </table>
         )}
         {!loading && vendors.length === 0 && (
-          <div className="p-12 text-center text-slate-500">Hakuna maduka bado.</div>
+          <div className="p-12 text-center text-slate-500">No stores yet.</div>
         )}
       </div>
     </div>

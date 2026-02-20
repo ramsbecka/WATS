@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/auth';
 import { getReferralCode, getReferralStats } from '@/api/client';
-import { colors, spacing, typography, radius } from '@/theme/tokens';
+import { colors, spacing, typography, radius, shadows } from '@/theme/tokens';
 import * as Clipboard from 'expo-clipboard';
 
 export default function InviteFriend() {
@@ -87,36 +87,50 @@ export default function InviteFriend() {
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.title}>Invite Friend</Text>
+        <View style={styles.headerContent}>
+          <Ionicons name="people" size={24} color={colors.primary} />
+          <Text style={styles.title}>Alika Rafiki</Text>
+        </View>
+        <View style={styles.placeholder} />
       </View>
 
       <View style={styles.content}>
         <Card style={styles.codeCard}>
-          <Text style={styles.codeLabel}>Your Referral Code</Text>
+          <View style={styles.codeHeader}>
+            <Ionicons name="ticket" size={24} color={colors.primary} />
+            <Text style={styles.codeLabel}>Nambari Yako ya Ualika</Text>
+          </View>
           <Pressable onPress={handleCopyCode} style={styles.codeContainer}>
             <Text style={styles.codeText}>{referralCode}</Text>
-            <Ionicons name="copy-outline" size={20} color={colors.primary} />
+            <Ionicons name="copy-outline" size={22} color={colors.primary} />
           </Pressable>
-          <Text style={styles.codeHint}>Tap to copy</Text>
+          <Text style={styles.codeHint}>Bofya ili kunakili</Text>
         </Card>
 
         <Card style={styles.benefitsCard}>
-          <Text style={styles.benefitsTitle}>Benefits</Text>
+          <View style={styles.benefitsHeader}>
+            <Ionicons name="gift" size={24} color={colors.primary} />
+            <Text style={styles.benefitsTitle}>Faida</Text>
+          </View>
           <View style={styles.benefitRow}>
-            <Ionicons name="gift-outline" size={24} color={colors.primary} />
+            <View style={styles.benefitIconContainer}>
+              <Ionicons name="gift-outline" size={24} color={colors.primary} />
+            </View>
             <View style={styles.benefitText}>
-              <Text style={styles.benefitLabel}>Your Friend Gets</Text>
+              <Text style={styles.benefitLabel}>Rafiki Yako Atapata</Text>
               <Text style={styles.benefitValue}>
-                {stats?.referred_bonus_points || 50} Bonus Points
+                {stats?.referred_bonus_points || 50} Alama za Ziada
               </Text>
             </View>
           </View>
           <View style={styles.benefitRow}>
-            <Ionicons name="star-outline" size={24} color={colors.primary} />
+            <View style={styles.benefitIconContainer}>
+              <Ionicons name="star" size={24} color={colors.primary} />
+            </View>
             <View style={styles.benefitText}>
-              <Text style={styles.benefitLabel}>You Get</Text>
+              <Text style={styles.benefitLabel}>Wewe Utapata</Text>
               <Text style={styles.benefitValue}>
-                {stats?.referral_bonus_points || 100} Bonus Points
+                {stats?.referral_bonus_points || 100} Alama za Ziada
               </Text>
             </View>
           </View>
@@ -124,11 +138,14 @@ export default function InviteFriend() {
 
         {stats && (
           <Card style={styles.statsCard}>
-            <Text style={styles.statsTitle}>Your Stats</Text>
+            <View style={styles.statsHeader}>
+              <Ionicons name="stats-chart" size={24} color={colors.primary} />
+              <Text style={styles.statsTitle}>Takwimu Zako</Text>
+            </View>
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>{stats.total_referrals || 0}</Text>
-                <Text style={styles.statLabel}>Total Referrals</Text>
+                <Text style={styles.statLabel}>Jumla ya Walioualika</Text>
               </View>
             </View>
           </Card>
@@ -136,8 +153,8 @@ export default function InviteFriend() {
 
         <View style={styles.actions}>
           <Pressable onPress={handleShare} style={styles.shareBtn}>
-            <Ionicons name="share-outline" size={20} color={colors.surface} />
-            <Text style={styles.shareBtnText}>Share Referral Code</Text>
+            <Ionicons name="share-outline" size={22} color={colors.onPrimary} />
+            <Text style={styles.shareBtnText}>Shiriki Nambari ya Ualika</Text>
           </Pressable>
         </View>
       </View>
@@ -156,16 +173,26 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
+    ...shadows.sm,
   },
   backBtn: {
     padding: spacing.xs,
     marginLeft: -spacing.xs,
   },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flex: 1,
+    justifyContent: 'center',
+  },
   title: {
     ...typography.heading,
     color: colors.textPrimary,
-    flex: 1,
-    textAlign: 'center',
+    fontWeight: '700',
+  },
+  placeholder: {
+    width: 40,
   },
   centered: {
     flex: 1,
@@ -185,28 +212,39 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     alignItems: 'center',
     marginBottom: spacing.lg,
+    borderRadius: radius.lg,
+    ...shadows.md,
+  },
+  codeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   codeLabel: {
-    ...typography.body,
-    color: colors.textMuted,
-    marginBottom: spacing.md,
+    ...typography.subheading,
+    color: colors.textPrimary,
+    fontWeight: '600',
   },
   codeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.primary + '10',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
+    gap: spacing.md,
+    backgroundColor: colors.primary + '15',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+    borderRadius: radius.lg,
     marginBottom: spacing.sm,
+    borderWidth: 2,
+    borderColor: colors.primary + '30',
+    borderStyle: 'dashed',
   },
   codeText: {
     ...typography.heading,
-    fontSize: 28,
+    fontSize: 32,
     color: colors.primary,
     fontWeight: '700',
-    letterSpacing: 2,
+    letterSpacing: 3,
   },
   codeHint: {
     ...typography.caption,
@@ -215,17 +253,35 @@ const styles = StyleSheet.create({
   benefitsCard: {
     padding: spacing.lg,
     marginBottom: spacing.lg,
+    borderRadius: radius.lg,
+    ...shadows.md,
+  },
+  benefitsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   benefitsTitle: {
     ...typography.subheading,
     color: colors.textPrimary,
     fontWeight: '600',
-    marginBottom: spacing.md,
   },
   benefitRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.md,
+    padding: spacing.sm,
+    backgroundColor: colors.background,
+    borderRadius: radius.md,
+  },
+  benefitIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   benefitText: {
     marginLeft: spacing.md,
@@ -244,12 +300,22 @@ const styles = StyleSheet.create({
   statsCard: {
     padding: spacing.lg,
     marginBottom: spacing.lg,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primary + '08',
+    borderWidth: 1,
+    borderColor: colors.primary + '20',
+    ...shadows.sm,
+  },
+  statsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   statsTitle: {
     ...typography.subheading,
     color: colors.textPrimary,
     fontWeight: '600',
-    marginBottom: spacing.md,
   },
   statsRow: {
     flexDirection: 'row',
@@ -260,7 +326,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     ...typography.heading,
-    fontSize: 32,
+    fontSize: 36,
     color: colors.primary,
     fontWeight: '700',
   },
@@ -268,6 +334,7 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textMuted,
     marginTop: spacing.xs,
+    textAlign: 'center',
   },
   actions: {
     marginTop: spacing.md,
@@ -278,13 +345,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     backgroundColor: colors.primary,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.lg,
     paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
+    ...shadows.md,
   },
   shareBtnText: {
     ...typography.body,
-    color: colors.surface,
+    color: colors.onPrimary,
     fontWeight: '600',
   },
 });

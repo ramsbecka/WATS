@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { useCartStore } from '@/store/cart';
 import { useAuthStore } from '@/store/auth';
 import { initiateCheckout, getAvailableVouchers, verifyVoucherCode } from '@/api/client';
-import { colors, spacing, typography, radius } from '@/theme/tokens';
+import { colors, spacing, typography, radius, shadows } from '@/theme/tokens';
 import { trackPurchase } from '@/services/ai';
 
 export default function Checkout() {
@@ -147,10 +147,22 @@ export default function Checkout() {
       router.replace({ pathname: '/checkout/payment', params: { orderId: result.order_id, orderNumber: result.order_number } });
     } catch (e: any) {
       setLoading(false);
-      const errorMessage = e.message || 'Failed to start payment.';
+      console.error('[Checkout] Error details:', e);
+      const errorMessage = e.message || e.toString() || 'Failed to start payment.';
+      
+      // Check for specific error types
+      let displayMessage = errorMessage;
+      if (errorMessage.includes('404') || errorMessage.includes('Not Found')) {
+        displayMessage = 'Checkout service not available. Please ensure Edge Functions are deployed.';
+      } else if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
+        displayMessage = 'Please log in again to continue.';
+      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        displayMessage = 'Network error. Please check your internet connection and try again.';
+      }
+      
       Alert.alert(
         'Checkout Error',
-        errorMessage,
+        displayMessage,
         [
           { text: 'OK' },
           { 
@@ -172,10 +184,16 @@ export default function Checkout() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          {/* Header */}
           <View style={styles.header}>
-          <Text style={styles.title}>Checkout</Text>
-          <Text style={styles.subtitle}>Enter shipping address and pay</Text>
-        </View>
+            <View style={styles.headerContent}>
+              <Ionicons name="cart" size={28} color={colors.primary} />
+              <View style={styles.headerText}>
+                <Text style={styles.title}>Checkout</Text>
+                <Text style={styles.subtitle}>Jaza anwani na malipo</Text>
+              </View>
+            </View>
+          </View>
         <Card style={styles.summaryCard}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
@@ -283,32 +301,157 @@ const styles = StyleSheet.create({
   keyboard: { flex: 1 },
   scroll: { flex: 1 },
   content: { padding: spacing.lg, paddingBottom: 48 },
-  header: { marginBottom: spacing.lg },
-  title: { ...typography.title, color: colors.textPrimary },
-  subtitle: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 4 },
-  summaryCard: { padding: spacing.lg, marginBottom: spacing.md },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
-  summaryLabel: { ...typography.subheading, color: colors.textSecondary },
-  summaryValue: { ...typography.body, color: colors.textPrimary },
-  discountValue: { ...typography.body, color: colors.success || colors.primary, fontWeight: '600' },
-  totalRow: { marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
-  totalLabel: { ...typography.subheading, color: colors.textPrimary, fontWeight: '700' },
-  totalValue: { ...typography.title, color: colors.primary },
-  voucherCard: { padding: spacing.lg, marginBottom: spacing.xl },
-  voucherHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
-  voucherTitle: { ...typography.subheading, color: colors.textPrimary, fontWeight: '600' },
-  voucherLink: { ...typography.caption, color: colors.primary },
-  voucherInputRow: { flexDirection: 'row', gap: spacing.sm },
+  header: {
+    marginBottom: spacing.xl,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  headerText: {
+    flex: 1,
+  },
+  title: {
+    ...typography.heading,
+    color: colors.textPrimary,
+    fontWeight: '700',
+  },
+  subtitle: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+  summaryCard: {
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: radius.lg,
+    ...shadows.md,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  summaryLabel: {
+    ...typography.subheading,
+    color: colors.textSecondary,
+  },
+  summaryValue: {
+    ...typography.body,
+    color: colors.textPrimary,
+    fontWeight: '500',
+  },
+  discountValue: {
+    ...typography.body,
+    color: colors.success || colors.primary,
+    fontWeight: '600',
+  },
+  totalRow: {
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1.5,
+    borderTopColor: colors.border,
+  },
+  totalLabel: {
+    ...typography.subheading,
+    color: colors.textPrimary,
+    fontWeight: '700',
+    fontSize: 18,
+  },
+  totalValue: {
+    ...typography.title,
+    color: colors.primary,
+    fontWeight: '700',
+    fontSize: 22,
+  },
+  voucherCard: {
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+    borderRadius: radius.lg,
+    ...shadows.md,
+  },
+  voucherHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  voucherTitle: {
+    ...typography.subheading,
+    color: colors.textPrimary,
+    fontWeight: '600',
+  },
+  voucherLink: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  voucherInputRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
   voucherInput: { flex: 1 },
   voucherButton: { alignSelf: 'flex-end' },
-  voucherError: { ...typography.caption, color: colors.error, marginTop: spacing.xs },
-  appliedVoucher: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.md, backgroundColor: `${colors.success || colors.primary}15`, borderRadius: radius.md },
-  appliedVoucherInfo: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  appliedVoucherText: { ...typography.body, color: colors.textPrimary, fontWeight: '600' },
-  vouchersList: { marginTop: spacing.md, gap: spacing.sm },
-  voucherItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.md, backgroundColor: colors.background, borderRadius: radius.md },
-  voucherItemCode: { ...typography.body, color: colors.textPrimary, fontWeight: '600', marginBottom: 2 },
-  voucherItemDesc: { ...typography.caption, color: colors.textSecondary },
-  form: { marginBottom: spacing.lg },
-  submitBtn: { marginTop: 8 },
+  voucherError: {
+    ...typography.caption,
+    color: colors.error,
+    marginTop: spacing.xs,
+  },
+  appliedVoucher: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.md,
+    backgroundColor: `${colors.success || colors.primary}15`,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: `${colors.success || colors.primary}30`,
+  },
+  appliedVoucherInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  appliedVoucherText: {
+    ...typography.body,
+    color: colors.textPrimary,
+    fontWeight: '600',
+  },
+  vouchersList: {
+    marginTop: spacing.md,
+    gap: spacing.sm,
+  },
+  voucherItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.md,
+    backgroundColor: colors.background,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  voucherItemCode: {
+    ...typography.body,
+    color: colors.textPrimary,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  voucherItemDesc: {
+    ...typography.caption,
+    color: colors.textSecondary,
+  },
+  form: {
+    marginBottom: spacing.lg,
+    gap: spacing.md,
+  },
+  submitBtn: {
+    marginTop: spacing.md,
+    ...shadows.md,
+  },
 });

@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, ScrollView, Platform, Alert, Pressable } from 'react-native';
 import { useRouter, Link } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/components/ui/Screen';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { supabase, hasValidSupabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
-import { colors, spacing, typography } from '@/theme/tokens';
+import { colors, spacing, typography, radius, shadows } from '@/theme/tokens';
 
 function normalizePhone(value: string): string {
   const digits = value.replace(/\D/g, '');
@@ -55,6 +56,7 @@ export default function Register() {
       email: e,
       password,
       options: {
+        // Disable email confirmation - allow immediate login
         emailRedirectTo: undefined,
         data: { display_name: name, phone: normalizedPhone },
       },
@@ -67,14 +69,15 @@ export default function Register() {
     if (data?.user) {
       try {
         await useAuthStore.getState().ensureProfile(data.user);
+        // Set user in auth store for immediate login
+        useAuthStore.getState().setUser(data.user);
+        // Fetch profile
+        await useAuthStore.getState().fetchProfile(data.user.id);
       } catch (_) {}
     }
     setLoading(false);
-    Alert.alert(
-      'Check your email',
-      'We sent a confirmation link to your email. Open it and tap the link, then sign in here.',
-      [{ text: 'OK', onPress: () => router.replace('/auth/login') }]
-    );
+    // Redirect to app immediately without email verification
+    router.replace('/(tabs)');
   };
 
   return (
@@ -90,10 +93,22 @@ export default function Register() {
           showsVerticalScrollIndicator={false}
           style={styles.scroll}
         >
-          <Text style={styles.title}>Register</Text>
-          <Text style={styles.subtitle}>Create a new account with your details.</Text>
+          {/* Header with logo */}
+          <View style={styles.headerContainer}>
+            <View style={styles.logoContainer}>
+              <View style={styles.logoCircle}>
+                <Ionicons name="person-add" size={36} color={colors.primary} />
+              </View>
+            </View>
+            <Text style={styles.title}>Register</Text>
+            <Text style={styles.subtitle}>Unda account mpya na uanze kununua</Text>
+          </View>
+
           {!hasValidSupabase && (
-            <Text style={styles.envWarning}>Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in .env to connect.</Text>
+            <View style={styles.warningContainer}>
+              <Ionicons name="warning-outline" size={16} color={colors.warning} />
+              <Text style={styles.envWarning}>Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in .env to connect.</Text>
+            </View>
           )}
 
           <Card style={styles.card}>
@@ -152,15 +167,86 @@ export default function Register() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
+  screen: { flex: 1, backgroundColor: colors.background },
   keyboard: { flex: 1 },
   scroll: { flex: 1 },
-  scrollContent: { flexGrow: 1, padding: spacing.lg, justifyContent: 'center', paddingBottom: spacing.xxl, minHeight: 400 },
-  title: { ...typography.hero, color: colors.primary, marginBottom: 8, textAlign: 'center' },
-  subtitle: { ...typography.body, color: colors.textSecondary, marginBottom: spacing.xl, textAlign: 'center', paddingHorizontal: 16 },
-  envWarning: { ...typography.caption, color: colors.warning, marginBottom: spacing.md, textAlign: 'center', paddingHorizontal: 16 },
-  card: { padding: spacing.lg },
-  footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: spacing.lg },
-  footerText: { ...typography.body, color: colors.textSecondary },
-  footerLink: { ...typography.subheading, color: colors.primary },
+  scrollContent: { 
+    flexGrow: 1, 
+    padding: spacing.lg, 
+    justifyContent: 'center', 
+    paddingBottom: spacing.xxl, 
+    minHeight: 400 
+  },
+  headerContainer: {
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+    paddingTop: spacing.xl,
+  },
+  logoContainer: {
+    marginBottom: spacing.lg,
+  },
+  logoCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.lg,
+    borderWidth: 3,
+    borderColor: colors.primary + '20',
+  },
+  title: { 
+    ...typography.hero, 
+    color: colors.textPrimary, 
+    marginBottom: spacing.sm, 
+    textAlign: 'center',
+    fontWeight: '800',
+  },
+  subtitle: { 
+    ...typography.body, 
+    color: colors.textSecondary, 
+    textAlign: 'center', 
+    paddingHorizontal: spacing.lg,
+    fontSize: 15,
+  },
+  warningContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.warning + '15',
+    padding: spacing.md,
+    borderRadius: radius.md,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
+  },
+  envWarning: { 
+    ...typography.caption, 
+    color: colors.warning, 
+    flex: 1,
+    fontSize: 12,
+  },
+  card: { 
+    padding: spacing.xl,
+    borderRadius: radius.lg,
+    ...shadows.md,
+    backgroundColor: colors.surface,
+  },
+  footer: { 
+    flexDirection: 'row', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginTop: spacing.xl,
+    paddingTop: spacing.lg,
+  },
+  footerText: { 
+    ...typography.body, 
+    color: colors.textSecondary,
+    fontSize: 15,
+  },
+  footerLink: { 
+    ...typography.subheading, 
+    color: colors.primary,
+    fontWeight: '700',
+    marginLeft: spacing.xs,
+  },
 });

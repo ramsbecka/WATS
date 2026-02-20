@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/auth';
 import { getRecentlyViewed, clearRecentlyViewed } from '@/api/client';
-import { colors, spacing, typography, radius } from '@/theme/tokens';
+import { colors, spacing, typography, radius, shadows } from '@/theme/tokens';
 
 export default function RecentlyViewed() {
   const router = useRouter();
@@ -73,18 +73,24 @@ export default function RecentlyViewed() {
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.title}>Recently Viewed</Text>
+        <View style={styles.headerContent}>
+          <Ionicons name="time" size={24} color={colors.primary} />
+          <Text style={styles.title}>Recently Viewed</Text>
+        </View>
         {items.length > 0 && (
           <Pressable onPress={handleClear} style={styles.clearBtn}>
-            <Text style={styles.clearText}>Clear</Text>
+            <Ionicons name="trash-outline" size={20} color={colors.error} />
           </Pressable>
         )}
       </View>
 
       {items.length === 0 ? (
         <View style={styles.centered}>
-          <Ionicons name="time-outline" size={64} color={colors.textMuted} />
-          <Text style={styles.emptyText}>No recently viewed products</Text>
+          <View style={styles.emptyIconContainer}>
+            <Ionicons name="time-outline" size={64} color={colors.textMuted} />
+          </View>
+          <Text style={styles.emptyTitle}>No recently viewed products</Text>
+          <Text style={styles.emptySubtitle}>Browse products to see them here</Text>
         </View>
       ) : (
         <FlatList
@@ -101,19 +107,27 @@ export default function RecentlyViewed() {
                 style={styles.productCard}
                 onPress={() => router.push(`/products/${product.id}`)}
               >
-                <Image
-                  source={{ uri: product.image || 'https://via.placeholder.com/200' }}
-                  style={styles.productImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.productInfo}>
-                  <Text style={styles.productName} numberOfLines={2}>
-                    {product.name_en}
-                  </Text>
-                  <Text style={styles.productPrice}>
-                    TZS {Number(product.price_tzs).toLocaleString()}
-                  </Text>
-                </View>
+                <Card style={styles.card}>
+                  {product.image ? (
+                    <Image
+                      source={{ uri: product.image }}
+                      style={styles.productImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={styles.productImagePlaceholder}>
+                      <Ionicons name="image-outline" size={32} color={colors.textMuted} />
+                    </View>
+                  )}
+                  <View style={styles.productInfo}>
+                    <Text style={styles.productName} numberOfLines={2}>
+                      {product.name_en}
+                    </Text>
+                    <Text style={styles.productPrice}>
+                      TZS {Number(product.price_tzs).toLocaleString()}
+                    </Text>
+                  </View>
+                </Card>
               </Pressable>
             );
           }}
@@ -134,29 +148,54 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
+    ...shadows.sm,
   },
   backBtn: {
     padding: spacing.xs,
     marginLeft: -spacing.xs,
   },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flex: 1,
+    justifyContent: 'center',
+  },
   title: {
     ...typography.heading,
     color: colors.textPrimary,
-    flex: 1,
-    textAlign: 'center',
+    fontWeight: '700',
   },
   clearBtn: {
     padding: spacing.xs,
-  },
-  clearText: {
-    ...typography.body,
-    color: colors.primary,
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xl,
+  },
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: colors.borderLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  emptyTitle: {
+    ...typography.heading,
+    color: colors.textPrimary,
+    marginTop: spacing.md,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  emptySubtitle: {
+    ...typography.body,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+    textAlign: 'center',
   },
   emptyText: {
     ...typography.body,
@@ -172,24 +211,34 @@ const styles = StyleSheet.create({
   },
   productCard: {
     width: '48%',
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    overflow: 'hidden',
     marginBottom: spacing.md,
+  },
+  card: {
+    overflow: 'hidden',
+    borderRadius: radius.lg,
+    ...shadows.md,
   },
   productImage: {
     width: '100%',
-    height: 150,
+    height: 160,
     backgroundColor: colors.borderLight,
   },
+  productImagePlaceholder: {
+    width: '100%',
+    height: 160,
+    backgroundColor: colors.borderLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   productInfo: {
-    padding: spacing.sm,
+    padding: spacing.md,
   },
   productName: {
     ...typography.body,
     color: colors.textPrimary,
     marginBottom: spacing.xs,
-    minHeight: 36,
+    minHeight: 40,
+    fontWeight: '500',
   },
   productPrice: {
     ...typography.subheading,

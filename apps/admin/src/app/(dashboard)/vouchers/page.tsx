@@ -1,5 +1,5 @@
-import Vouchers from '@/components/Vouchers';
+import VouchersPage from '@/components/VouchersPage';
 
-export default function VouchersPage() {
-  return <Vouchers />;
+export default function Page() {
+  return <VouchersPage />;
 }

@@ -8,10 +8,10 @@ const nextConfig = {
   typescript: { ignoreBuildErrors: false },
   
   // Deployment configuration
-  output: 'standalone', // Kwa server-side rendering (Vercel/Netlify)
-  // output: 'export', // Kwa static export (GitHub Pages) - uncomment kama unahitaji
+  output: 'standalone', // For server-side rendering (Vercel/Netlify)
+  // output: 'export', // For static export (GitHub Pages) - uncomment if needed
   
-  // Kwa GitHub Pages, uncomment hizi:
+  // For GitHub Pages, uncomment these:
   // basePath: '/WATS',
   // assetPrefix: '/WATS/',
   
@@ -21,7 +21,7 @@ const nextConfig = {
   // Images
   images: {
     domains: ['placeholder.supabase.co'],
-    unoptimized: false, // Set true kwa static export
+    unoptimized: false, // Set true for static export
   },
 };
 

@@ -2,6 +2,12 @@ import { supabase } from '@/lib/supabase';
 
 const FUNCTIONS_URL = (process.env.EXPO_PUBLIC_SUPABASE_URL ?? '').replace(/\/$/, '') + '/functions/v1';
 
+// Debug: Log functions URL to verify it's correct (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  console.log('[API] Functions URL:', FUNCTIONS_URL);
+  console.log('[API] Supabase URL:', process.env.EXPO_PUBLIC_SUPABASE_URL);
+}
+
 async function getAuthHeaders(): Promise<HeadersInit> {
   const { data: { session } } = await supabase.auth.getSession();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -18,18 +24,50 @@ export async function initiateCheckout(params: {
   const idempotencyKey = params.idempotency_key || `ck-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const headers = await getAuthHeaders();
   (headers as Record<string, string>)['x-idempotency-key'] = idempotencyKey;
-  const res = await fetch(`${FUNCTIONS_URL}/checkout-initiate`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      shipping_address: params.shipping_address,
-      payment_provider: params.payment_provider ?? 'mpesa',
-      voucher_code: params.voucher_code,
-    }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Checkout failed');
-  return data;
+  
+  const url = `${FUNCTIONS_URL}/checkout-initiate`;
+  console.log('[Checkout] Calling:', url);
+  console.log('[Checkout] Headers:', { ...headers, Authorization: headers.Authorization ? 'Bearer ***' : 'none' });
+  
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        shipping_address: params.shipping_address,
+        payment_provider: params.payment_provider ?? 'mpesa',
+        voucher_code: params.voucher_code,
+      }),
+    });
+    
+    console.log('[Checkout] Response status:', res.status, res.statusText);
+    
+    let data;
+    try {
+      data = await res.json();
+    } catch (e) {
+      const text = await res.text();
+      console.error('[Checkout] Failed to parse JSON:', text);
+      throw new Error(`Checkout failed: ${res.status} ${res.statusText}. ${text}`);
+    }
+    
+    console.log('[Checkout] Response data:', data);
+    
+    if (!res.ok) {
+      const errorMsg = data.error || data.message || `Checkout failed (${res.status})`;
+      const errorCode = data.code || 'CHECKOUT_ERROR';
+      console.error('[Checkout] Error:', errorCode, errorMsg);
+      throw new Error(`${errorMsg} (${errorCode})`);
+    }
+    
+    return data;
+  } catch (e: any) {
+    console.error('[Checkout] Exception:', e);
+    if (e.message) {
+      throw e;
+    }
+    throw new Error(`Checkout failed: ${e.toString()}`);
+  }
 }
 
 export async function getOrder(orderId: string) {

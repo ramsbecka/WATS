@@ -37,7 +37,7 @@ export default function Users() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Users</h1>
-          <p className="mt-1 text-sm text-slate-500">Watumiaji wote wa mfumo</p>
+          <p className="mt-1 text-sm text-slate-500">All system users</p>
         </div>
       </div>
       <div className="mt-4">

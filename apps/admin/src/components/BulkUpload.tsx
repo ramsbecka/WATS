@@ -25,7 +25,7 @@ export default function BulkUpload() {
     setError(null);
     setResult(null);
     if (!vendorId.trim()) {
-      setError('Chagua duka.');
+      setError('Please select a store.');
       return;
     }
     let products: any[];
@@ -85,7 +85,7 @@ export default function BulkUpload() {
             onChange={(e) => setVendorId(e.target.value)}
             className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900"
           >
-            <option value="">Chagua duka</option>
+            <option value="">Select store</option>
             {vendors.map((v) => (
               <option key={v.id} value={v.id}>{v.business_name}</option>
             ))}

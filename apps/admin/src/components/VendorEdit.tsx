@@ -75,13 +75,13 @@ export default function VendorEdit({ id: idProp }: Props = {}) {
   return (
     <div>
       <Link href="/vendors" className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900">
-        <ArrowLeft className="h-4 w-4" /> Rudi kwa Maduka
+        <ArrowLeft className="h-4 w-4" /> Back to Stores
       </Link>
-      <h1 className="text-2xl font-bold tracking-tight text-slate-900">{isNew ? 'Ongeza duka' : 'Hariri duka'}</h1>
-      <p className="mt-1 text-sm text-slate-500">Admin anaweza kuongeza/hariri maduka; bidhaa utazajaza wewe baada ya kufuata wenye duka.</p>
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900">{isNew ? 'Add store' : 'Edit store'}</h1>
+      <p className="mt-1 text-sm text-slate-500">Admin can add/edit stores; you add products after following the store owner.</p>
       <form onSubmit={handleSubmit} className="mt-6 max-w-xl space-y-4">
         <div>
-          <label htmlFor="v-business" className="mb-1.5 block text-sm font-medium text-slate-700">Jina la biashara</label>
+          <label htmlFor="v-business" className="mb-1.5 block text-sm font-medium text-slate-700">Business name</label>
           <input
             id="v-business"
             value={form.business_name}
@@ -91,7 +91,7 @@ export default function VendorEdit({ id: idProp }: Props = {}) {
           />
         </div>
         <div>
-          <label htmlFor="v-reg" className="mb-1.5 block text-sm font-medium text-slate-700">Nambari ya usajili (si lazima)</label>
+          <label htmlFor="v-reg" className="mb-1.5 block text-sm font-medium text-slate-700">Registration number (optional)</label>
           <input
             id="v-reg"
             value={form.business_reg_no}
@@ -100,7 +100,7 @@ export default function VendorEdit({ id: idProp }: Props = {}) {
           />
         </div>
         <div>
-          <label htmlFor="v-phone" className="mb-1.5 block text-sm font-medium text-slate-700">Simu ya mawasiliano</label>
+          <label htmlFor="v-phone" className="mb-1.5 block text-sm font-medium text-slate-700">Contact phone</label>
           <input
             id="v-phone"
             value={form.contact_phone}
@@ -110,7 +110,7 @@ export default function VendorEdit({ id: idProp }: Props = {}) {
           />
         </div>
         <div>
-          <label htmlFor="v-commission" className="mb-1.5 block text-sm font-medium text-slate-700">Kiwango cha komisheni (%)</label>
+          <label htmlFor="v-commission" className="mb-1.5 block text-sm font-medium text-slate-700">Commission rate (%)</label>
           <input
             id="v-commission"
             type="number"
@@ -130,14 +130,14 @@ export default function VendorEdit({ id: idProp }: Props = {}) {
             onChange={(e) => setForm((f) => ({ ...f, is_approved: e.target.checked }))}
             className="rounded border-slate-300"
           />
-          <label htmlFor="v-approved" className="text-sm font-medium text-slate-700">Duka haiwezi kuonekana kwenye ripoti mpaka limewezeshwa</label>
+          <label htmlFor="v-approved" className="text-sm font-medium text-slate-700">Store cannot appear in reports until approved</label>
         </div>
         <div className="flex gap-3 pt-2">
           <button type="submit" disabled={saving} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-50">
-            {saving ? 'Inahifadhi…' : isNew ? 'Ongeza duka' : 'Hifadhi'}
+            {saving ? 'Saving…' : isNew ? 'Add store' : 'Save'}
           </button>
           <Link href="/vendors" className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
-            Ghairi
+            Cancel
           </Link>
         </div>
       </form>

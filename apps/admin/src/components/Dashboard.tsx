@@ -5,7 +5,6 @@ import {
   Package,
   ShoppingCart,
   Wallet,
-  TrendingUp,
   ClipboardList,
   Users,
   RotateCcw,
@@ -15,15 +14,13 @@ import { supabase } from '@/lib/supabase';
 
 const LOW_STOCK_THRESHOLD = 5;
 const cards = [
-  { key: 'ordersToday', label: 'Orders today', to: '/orders', Icon: Package, color: 'bg-primary/10 text-primary' },
-  { key: 'ordersTotal', label: 'Total orders', to: '/orders', Icon: ShoppingCart, color: 'bg-slate-100 text-slate-700' },
-  { key: 'users', label: 'Watumiaji', to: '/users', Icon: Users, color: 'bg-indigo-50 text-indigo-700' },
+  { key: 'orders', label: 'Orders', to: '/orders', Icon: ShoppingCart, color: 'bg-primary/10 text-primary', sub: 'ordersSub' },
+  { key: 'products', label: 'Products', to: '/products', Icon: Package, color: 'bg-violet-50 text-violet-700' },
+  { key: 'vendors', label: 'Stores', to: '/vendors', Icon: Users, color: 'bg-amber-50 text-amber-700' },
+  { key: 'users', label: 'Users', to: '/users', Icon: Users, color: 'bg-indigo-50 text-indigo-700' },
+  { key: 'payments', label: 'Payments', to: '/payments', Icon: Wallet, color: 'bg-emerald-50 text-emerald-700', sub: 'paymentsSub' },
   { key: 'pendingReturns', label: 'Pending returns', to: '/returns', Icon: RotateCcw, color: 'bg-orange-50 text-orange-700' },
-  { key: 'lowStock', label: 'Low stock (≤' + LOW_STOCK_THRESHOLD + ')', to: '/inventory', Icon: AlertTriangle, color: 'bg-amber-50 text-amber-700' },
-  { key: 'revenueToday', label: 'Revenue today (TZS)', to: '/payments', Icon: Wallet, color: 'bg-emerald-50 text-emerald-700' },
-  { key: 'revenueTotal', label: 'Total revenue (TZS)', to: '/payments', Icon: TrendingUp, color: 'bg-blue-50 text-blue-700' },
-  { key: 'products', label: 'Products', to: '/products', Icon: ClipboardList, color: 'bg-violet-50 text-violet-700' },
-  { key: 'vendors', label: 'Maduka', to: '/vendors', Icon: Users, color: 'bg-amber-50 text-amber-700' },
+  { key: 'lowStock', label: 'Low stock', to: '/inventory', Icon: AlertTriangle, color: 'bg-amber-50 text-amber-700', subLabel: 'lowStockSub' },
 ];
 
 export default function Dashboard() {
@@ -37,6 +34,9 @@ export default function Dashboard() {
     revenueTotal: 0,
     products: 0,
     vendors: 0,
+        ordersSub: '',
+        paymentsSub: '',
+        lowStockSub: '', // e.g. "≤5 units"
   });
 
   useEffect(() => {
@@ -62,35 +62,45 @@ export default function Dashboard() {
         revenueTotal: revAll.toLocaleString(),
         products: prods.count ?? 0,
         vendors: vends.count ?? 0,
+        ordersSub: `${oToday.count ?? 0} today · ${oAll.count ?? 0} total`,
+        paymentsSub: `${revToday.toLocaleString()} today · ${revAll.toLocaleString()} total`,
+        lowStockSub: '',
       });
       supabase.from('returns').select('id', { count: 'exact', head: true }).eq('status', 'requested').then(({ count }) => {
         setStats((prev) => ({ ...prev, pendingReturns: count ?? 0 }));
       });
       supabase.from('inventory').select('product_id').lte('quantity', LOW_STOCK_THRESHOLD).then(({ data }) => {
         const distinct = new Set((data ?? []).map((r: any) => r.product_id));
-        setStats((prev) => ({ ...prev, lowStock: distinct.size }));
+        setStats((prev) => ({ ...prev, lowStock: distinct.size, lowStockSub: `≤${LOW_STOCK_THRESHOLD} units` }));
       });
     });
   }, []);
 
   return (
     <div>
-      <h1 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard</h1>
-      <p className="mt-1 text-sm text-slate-500">Overview and key metrics</p>
-      <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map(({ key, label, to, Icon, color }) => (
+      <header className="mb-8">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard</h1>
+        <p className="mt-1 text-sm text-slate-500">Overview and key metrics</p>
+      </header>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {cards.map(({ key, label, to, Icon, color, sub, subLabel }) => (
           <Link
             key={key}
             href={to}
-            className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-primary/20 hover:shadow-md"
+            className="group relative overflow-hidden rounded-panel border border-slate-200/90 bg-white p-5 shadow-card transition-all duration-200 hover:border-primary/30 hover:shadow-card-hover"
           >
-            <div className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg ${color}`}>
+            <div
+              className={`mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl ${color} transition-transform duration-200 group-hover:scale-105`}
+            >
               <Icon className="h-5 w-5" strokeWidth={2} />
             </div>
-            <p className="text-sm font-medium text-slate-500">{label}</p>
-            <p className="mt-1 text-xl font-semibold text-slate-900 group-hover:text-primary">
-              {stats[key]}
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-400">{label}</p>
+            <p className="mt-1.5 text-xl font-bold tracking-tight text-slate-900 transition-colors group-hover:text-primary">
+              {sub && stats[sub] ? String(stats[sub]) : stats[key]}
             </p>
+            {subLabel && stats[subLabel] && (
+              <p className="mt-1 text-xs text-slate-500">{stats[subLabel]}</p>
+            )}
           </Link>
         ))}
       </div>

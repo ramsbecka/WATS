@@ -6,7 +6,7 @@ import { Screen } from '@/components/ui/Screen';
 import { Card } from '@/components/ui/Card';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
-import { colors, spacing, typography } from '@/theme/tokens';
+import { colors, spacing, typography, radius, shadows } from '@/theme/tokens';
 
 const statusLabel: Record<string, string> = {
   pending: 'Pending',
@@ -79,8 +79,13 @@ export default function Orders() {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <Text style={styles.title}>My orders</Text>
-      <Text style={styles.subtitle}>Your order history</Text>
+      <View style={styles.headerContent}>
+        <Ionicons name="receipt" size={24} color={colors.primary} />
+        <View>
+          <Text style={styles.title}>Maagizo Yangu</Text>
+          <Text style={styles.subtitle}>Historia ya maagizo yako</Text>
+        </View>
+      </View>
     </View>
   );
 
@@ -94,53 +99,171 @@ export default function Orders() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="receipt-outline" size={56} color={colors.textMuted} />
+            <View style={styles.emptyIconContainer}>
+              <Ionicons name="receipt-outline" size={64} color={colors.textMuted} />
+            </View>
             <Text style={styles.emptyText}>No orders yet.</Text>
           </View>
         }
-        renderItem={({ item }) => (
-          <Pressable
-            style={({ pressed }) => [pressed && { opacity: 0.9 }]}
-            onPress={() => router.push(`/orders/${item.id}`)}
-          >
-            <Card style={styles.card}>
-              <View style={styles.cardRow}>
-                <Text style={styles.orderNum}>{item.order_number}</Text>
-                <View style={[styles.badge, item.status === 'delivered' && styles.badgeSuccess]}>
-                  <Text style={styles.badgeText}>{statusLabel[item.status] ?? item.status}</Text>
+        renderItem={({ item }) => {
+          const statusColor = item.status === 'delivered' ? colors.success : 
+                             item.status === 'cancelled' ? colors.error :
+                             item.status === 'processing' || item.status === 'shipped' ? colors.primary : colors.textMuted;
+          return (
+            <Pressable
+              style={({ pressed }) => [pressed && { opacity: 0.9 }]}
+              onPress={() => router.push(`/orders/${item.id}`)}
+            >
+              <Card style={styles.card}>
+                <View style={styles.cardRow}>
+                  <View style={styles.orderInfo}>
+                    <Ionicons name="receipt-outline" size={20} color={colors.primary} />
+                    <Text style={styles.orderNum}>{item.order_number}</Text>
+                  </View>
+                  <View style={[styles.badge, { backgroundColor: `${statusColor}20` }]}>
+                    <Text style={[styles.badgeText, { color: statusColor }]}>{statusLabel[item.status] ?? item.status}</Text>
+                  </View>
                 </View>
-              </View>
-              <Text style={styles.amount}>TZS {Number(item.total_tzs).toLocaleString()}</Text>
-              <Text style={styles.date}>{new Date(item.created_at).toLocaleDateString('sw-TZ')}</Text>
-            </Card>
-          </Pressable>
-        )}
+                <View style={styles.cardDetails}>
+                  <View style={styles.amountRow}>
+                    <Ionicons name="cash-outline" size={18} color={colors.primary} />
+                    <Text style={styles.amount}>TZS {Number(item.total_tzs).toLocaleString()}</Text>
+                  </View>
+                  <View style={styles.dateRow}>
+                    <Ionicons name="calendar-outline" size={16} color={colors.textMuted} />
+                    <Text style={styles.date}>{new Date(item.created_at).toLocaleDateString('sw-TZ')}</Text>
+                  </View>
+                </View>
+              </Card>
+            </Pressable>
+          );
+        }}
       />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { padding: spacing.lg, paddingBottom: spacing.sm },
-  title: { ...typography.title, color: colors.textPrimary },
-  subtitle: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 2 },
-  list: { padding: spacing.lg, paddingBottom: 100 },
-  card: { padding: spacing.lg, marginBottom: 12 },
-  cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  orderNum: { ...typography.subheading, color: colors.textPrimary },
-  badge: {
-    backgroundColor: colors.borderLight,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+  header: {
+    padding: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+    ...shadows.sm,
   },
-  badgeSuccess: { backgroundColor: `${colors.success}20` },
-  badgeText: { ...typography.small, color: colors.textSecondary },
-  amount: { ...typography.body, color: colors.primary, fontWeight: '600' },
-  date: { ...typography.caption, color: colors.textMuted, marginTop: 4 },
-  empty: { flex: 1, alignItems: 'center', paddingVertical: 48 },
-  emptyText: { ...typography.body, color: colors.textSecondary, marginTop: 12, textAlign: 'center' },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
-  retryBtn: { marginTop: spacing.lg, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: colors.primary, borderRadius: 12 },
-  retryText: { ...typography.caption, color: colors.onPrimary, fontWeight: '600' },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  title: {
+    ...typography.heading,
+    color: colors.textPrimary,
+    fontWeight: '700',
+  },
+  subtitle: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  list: {
+    padding: spacing.lg,
+    paddingBottom: 100,
+  },
+  card: {
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: radius.lg,
+    ...shadows.md,
+  },
+  cardRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  orderInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flex: 1,
+  },
+  orderNum: {
+    ...typography.subheading,
+    color: colors.textPrimary,
+    fontWeight: '600',
+  },
+  badge: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.md,
+  },
+  badgeText: {
+    ...typography.caption,
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  cardDetails: {
+    gap: spacing.sm,
+  },
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  amount: {
+    ...typography.body,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  date: {
+    ...typography.caption,
+    color: colors.textMuted,
+  },
+  empty: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+  },
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: colors.borderLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  emptyText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: spacing.md,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  retryBtn: {
+    marginTop: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    backgroundColor: colors.primary,
+    borderRadius: radius.lg,
+    ...shadows.md,
+  },
+  retryText: {
+    ...typography.caption,
+    color: colors.onPrimary,
+    fontWeight: '600',
+  },
 });

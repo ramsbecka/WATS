@@ -166,7 +166,7 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.vendor_id) {
-      alert('Chagua duka (vendor) ni lazima.');
+      alert('Please select a store (vendor).');
       return;
     }
     setSaving(true);
@@ -205,13 +205,13 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
               upsert: true,
             });
             if (upErr) {
-              uploadErrors.push(`Picha ${i + 1}: ${upErr.message}`);
+              uploadErrors.push(`Image ${i + 1}: ${upErr.message}`);
               continue;
             }
             const { data: urlData } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(path);
             urls.push(urlData.publicUrl);
           } catch (err: any) {
-            uploadErrors.push(`Picha ${i + 1}: ${err.message ?? 'Upload failed'}`);
+            uploadErrors.push(`Image ${i + 1}: ${err.message ?? 'Upload failed'}`);
           }
         } else if (img.url) {
           urls.push(img.url);
@@ -228,7 +228,7 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
         if (imgErr) throw new Error(`Failed to save images: ${imgErr.message}`);
       }
       if (uploadErrors.length > 0) {
-        alert(`Bidhaa imehifadhiwa, lakini baadhi ya picha zimeshindwa:\n${uploadErrors.join('\n')}`);
+        alert(`Product saved, but some images failed to upload:\n${uploadErrors.join('\n')}`);
       }
       // Save product features
       await supabase.from('product_features').delete().eq('product_id', productId);
@@ -268,9 +268,9 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
         if (featErr) featureErrors.push(`Feature ${i + 1}: ${featErr.message}`);
       }
       if (featureErrors.length > 0) {
-        alert(`Bidhaa imehifadhiwa, lakini baadhi ya features zimeshindwa:\n${featureErrors.join('\n')}`);
+        alert(`Product saved, but some features failed to save:\n${featureErrors.join('\n')}`);
       }
-      // Baada ya ku-save kwa mafanikio, rudi kwenye products list
+      // After successful save, go back to products list
       router.push('/products');
     } catch (e: any) {
       alert(e.message ?? 'Failed to save');
@@ -350,7 +350,7 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
     const isVideo = file.type.startsWith('video/');
     const isImage = file.type.startsWith('image/');
     if (!isVideo && !isImage) {
-      alert('Tafadhali chagua picha au video tu.');
+      alert('Please select image or video only.');
       return;
     }
     updateFeature(index, {
@@ -369,7 +369,7 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
       <form onSubmit={handleSubmit} className="mt-6 max-w-xl space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-slate-700">Duka <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-slate-700">Store <span className="text-red-500">*</span></label>
             <select
               aria-label="Duka"
               aria-required="true"
@@ -378,7 +378,7 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               required
             >
-              <option value="">Chagua duka</option>
+              <option value="">Select store</option>
               {vendors.map((v) => (
                 <option key={v.id} value={v.id}>{v.business_name}</option>
               ))}
@@ -414,7 +414,7 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               disabled={!selectedMainCategoryId || subCategories.length === 0}
             >
-              <option value="">{selectedMainCategoryId ? (subCategories.length > 0 ? 'Chagua sub-category' : 'Hakuna sub-categories') : 'Chagua category kwanza'}</option>
+              <option value="">{selectedMainCategoryId ? (subCategories.length > 0 ? 'Select sub-category' : 'No sub-categories') : 'Select category first'}</option>
               {selectedMainCategoryId && (
                 <option value={selectedMainCategoryId}>Tumia main category</option>
               )}
@@ -594,8 +594,8 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
         <div className="mt-8 border-t border-slate-200 pt-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <label className="block text-sm font-medium text-slate-700">Maelezo ya Bidhaa (Features)</label>
-              <p className="mt-0.5 text-xs text-slate-500">Ongeza maelezo ya kina ya bidhaa na picha/video</p>
+              <label className="block text-sm font-medium text-slate-700">Product features</label>
+              <p className="mt-0.5 text-xs text-slate-500">Add detailed product features with image/video</p>
             </div>
             <button
               type="button"
@@ -662,7 +662,7 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
                     />
                   </div>
                   <div className="mt-3">
-                    <label htmlFor={`feature-media-${index}`} className="block text-xs font-medium text-slate-600 mb-2">Media (Picha au Video)</label>
+                    <label htmlFor={`feature-media-${index}`} className="block text-xs font-medium text-slate-600 mb-2">Media (Image or Video)</label>
                     <div className="flex gap-2">
                       <select
                         id={`feature-media-${index}`}
@@ -671,8 +671,8 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
                         onChange={(e) => updateFeature(index, { media_type: e.target.value as 'image' | 'video' | '' })}
                         className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
                       >
-                        <option value="">Hakuna media</option>
-                        <option value="image">Picha</option>
+                        <option value="">No media</option>
+                        <option value="image">Image</option>
                         <option value="video">Video</option>
                       </select>
                       {feature.media_type && (
@@ -730,14 +730,14 @@ export default function ProductEdit({ id: idProp }: Props = {}) {
               type="button"
               onClick={async () => {
                 const productName = form.name_en || 'Product';
-                if (!confirm(`Je, una uhakika unataka kufuta bidhaa "${productName}"?\n\nHii itaondoa bidhaa kabisa pamoja na variants, picha, na maelezo yake. Hutaweza kuirejesha.`)) {
+                if (!confirm(`Are you sure you want to delete product "${productName}"?\n\nThis will remove the product and its variants, images, and features. Cannot be undone.`)) {
                   return;
                 }
                 setDeleting(true);
                 try {
                   const { error } = await supabase.from('products').delete().eq('id', id);
                   if (error) throw error;
-                  alert('Bidhaa imefutwa.');
+                  alert('Product deleted.');
                   router.push('/products');
                 } catch (e: any) {
                   alert(`Failed to delete product: ${e.message}`);

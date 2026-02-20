@@ -56,13 +56,14 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: colors.surface,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
     borderRadius: radius.md,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
     color: colors.textPrimary,
+    minHeight: 50,
   },
   inputWithIcon: {
     paddingRight: 48,

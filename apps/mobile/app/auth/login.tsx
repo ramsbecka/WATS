@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, ScrollView, Platform, Alert, Pressable } from 'react-native';
 import { useRouter, Link } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/components/ui/Screen';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { supabase, hasValidSupabase } from '@/lib/supabase';
-import { colors, spacing, typography } from '@/theme/tokens';
+import { colors, spacing, typography, radius, shadows } from '@/theme/tokens';
 
 export default function Login() {
   const router = useRouter();
@@ -47,10 +48,17 @@ export default function Login() {
           showsVerticalScrollIndicator={false}
           style={styles.scroll}
         >
-          <Text style={styles.title}>WATS</Text>
-          <Text style={styles.subtitle}>Sign in with your email and password.</Text>
+          {/* Header */}
+          <View style={styles.headerContainer}>
+            <Text style={styles.title}>Welcome to WATS</Text>
+            <Text style={styles.subtitle}>Sign in to your account</Text>
+          </View>
+
           {!hasValidSupabase && (
-            <Text style={styles.envWarning}>Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in .env to connect.</Text>
+            <View style={styles.warningContainer}>
+              <Ionicons name="warning-outline" size={16} color={colors.warning} />
+              <Text style={styles.envWarning}>Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in .env to connect.</Text>
+            </View>
           )}
 
           <Card style={styles.card}>
@@ -70,10 +78,23 @@ export default function Login() {
               placeholder="••••••••"
               passwordToggle
             />
-            <Pressable onPress={() => router.push('/auth/reset-password')} style={styles.forgotLink}>
+            <Pressable 
+              onPress={() => router.push('/auth/reset-password')} 
+              style={styles.forgotLink}
+            >
+              <Ionicons name="lock-closed-outline" size={14} color={colors.primary} />
               <Text style={styles.linkText}>Forgot password?</Text>
             </Pressable>
             <Button title="Sign in" onPress={signInWithEmail} loading={loading} />
+            
+            {/* Divider */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+            
+            {/* Social login buttons (optional - can be added later) */}
           </Card>
 
           <View style={styles.footer}>
@@ -91,17 +112,100 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
+  screen: { flex: 1, backgroundColor: colors.background },
   keyboard: { flex: 1 },
   scroll: { flex: 1 },
-  scrollContent: { flexGrow: 1, padding: spacing.lg, justifyContent: 'center', paddingBottom: spacing.xxl, minHeight: 400 },
-  title: { ...typography.hero, color: colors.primary, marginBottom: 8, textAlign: 'center' },
-  subtitle: { ...typography.body, color: colors.textSecondary, marginBottom: spacing.xl, textAlign: 'center', paddingHorizontal: 16 },
-  envWarning: { ...typography.caption, color: colors.warning, marginBottom: spacing.md, textAlign: 'center', paddingHorizontal: 16 },
-  card: { padding: spacing.lg },
-  forgotLink: { alignSelf: 'flex-end', marginBottom: spacing.md },
-  linkText: { ...typography.caption, color: colors.primary },
-  footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: spacing.lg },
-  footerText: { ...typography.body, color: colors.textSecondary },
-  footerLink: { ...typography.subheading, color: colors.primary },
+  scrollContent: { 
+    flexGrow: 1, 
+    padding: spacing.lg, 
+    justifyContent: 'center', 
+    paddingBottom: spacing.xxl, 
+    minHeight: 400 
+  },
+  headerContainer: {
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+    paddingTop: spacing.xxl,
+  },
+  title: { 
+    ...typography.hero, 
+    color: colors.textPrimary, 
+    marginBottom: spacing.sm, 
+    textAlign: 'center',
+    fontWeight: '800',
+  },
+  subtitle: { 
+    ...typography.body, 
+    color: colors.textSecondary, 
+    textAlign: 'center', 
+    paddingHorizontal: spacing.lg,
+    fontSize: 15,
+  },
+  warningContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.warning + '15',
+    padding: spacing.md,
+    borderRadius: radius.md,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
+  },
+  envWarning: { 
+    ...typography.caption, 
+    color: colors.warning, 
+    flex: 1,
+    fontSize: 12,
+  },
+  card: { 
+    padding: spacing.xl,
+    borderRadius: radius.lg,
+    ...shadows.md,
+    backgroundColor: colors.surface,
+  },
+  forgotLink: { 
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-end', 
+    marginBottom: spacing.md,
+    gap: spacing.xs,
+  },
+  linkText: { 
+    ...typography.caption, 
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.lg,
+    gap: spacing.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    ...typography.caption,
+    color: colors.textMuted,
+    fontSize: 12,
+  },
+  footer: { 
+    flexDirection: 'row', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginTop: spacing.xl,
+    paddingTop: spacing.lg,
+  },
+  footerText: { 
+    ...typography.body, 
+    color: colors.textSecondary,
+    fontSize: 15,
+  },
+  footerLink: { 
+    ...typography.subheading, 
+    color: colors.primary,
+    fontWeight: '700',
+    marginLeft: spacing.xs,
+  },
 });

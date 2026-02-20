@@ -16,7 +16,7 @@ type SplashImage = {
   file?: File;
 };
 
-export default function SplashImages() {
+export default function SplashImages({ hideTitle }: { hideTitle?: boolean } = {}) {
   const [images, setImages] = useState<SplashImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -152,11 +152,13 @@ export default function SplashImages() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Splash Images</h1>
-          <p className="mt-1 text-sm text-slate-500">Manage onboarding carousel images for mobile app</p>
-        </div>
+      <div className={`flex flex-wrap items-center justify-between gap-4 ${hideTitle ? 'mt-0' : ''}`}>
+        {!hideTitle && (
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Splash Images</h1>
+            <p className="mt-1 text-sm text-slate-500">Manage onboarding carousel images for mobile app</p>
+          </div>
+        )}
         <button
           onClick={() => setShowAddForm(true)}
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark"

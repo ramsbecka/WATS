@@ -1,5 +1,5 @@
-import SplashImages from '@/components/SplashImages';
+import { redirect } from 'next/navigation';
 
 export default function SplashImagesPage() {
-  return <SplashImages />;
+  redirect('/content');
 }

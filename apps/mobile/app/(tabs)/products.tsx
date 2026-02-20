@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Image, TextInput, Dimensions, ActivityIndicator, Modal, Animated, AppState, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Image, TextInput, Dimensions, ActivityIndicator, Modal, Animated, AppState, RefreshControl, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/components/ui/Screen';
@@ -524,10 +524,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: SCREEN_WIDTH * 0.8,
     backgroundColor: colors.surface,
-    shadowColor: '#000',
-    shadowOffset: { width: 2, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '2px 0px 4px rgba(0, 0, 0, 0.25)' }
+      : { shadowColor: '#000', shadowOffset: { width: 2, height: 0 }, shadowOpacity: 0.25, shadowRadius: 4 }),
     elevation: 5,
   },
   menuHeader: {

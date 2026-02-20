@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useAuthStore } from '@/store/auth';
 import { verifyReferralCode, applyReferralCode } from '@/api/client';
-import { colors, spacing, typography, radius } from '@/theme/tokens';
+import { colors, spacing, typography, radius, shadows } from '@/theme/tokens';
 
 export default function FriendCode() {
   const router = useRouter();
@@ -89,14 +89,21 @@ export default function FriendCode() {
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.title}>Friend's Code</Text>
+        <View style={styles.headerContent}>
+          <Ionicons name="people" size={24} color={colors.primary} />
+          <Text style={styles.title}>Nambari ya Rafiki</Text>
+        </View>
+        <View style={styles.placeholder} />
       </View>
 
       <View style={styles.content}>
         <Card style={styles.card}>
-          <Text style={styles.description}>
-            Enter your friend's referral code to get bonus points when you sign up or make your first purchase.
-          </Text>
+          <View style={styles.descriptionContainer}>
+            <Ionicons name="gift-outline" size={24} color={colors.primary} />
+            <Text style={styles.description}>
+              Ingiza nambari ya rafiki yako ili upate alama za ziada unapojisajili au kufanya ununuzi wako wa kwanza.
+            </Text>
+          </View>
 
           <View style={styles.inputContainer}>
             <Input
@@ -115,14 +122,14 @@ export default function FriendCode() {
 
           {verified && (
             <View style={styles.successBadge}>
-              <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-              <Text style={styles.successText}>Code verified</Text>
+              <Ionicons name="checkmark-circle" size={22} color={colors.success} />
+              <Text style={styles.successText}>Nambari imethibitishwa</Text>
             </View>
           )}
 
           <View style={styles.actions}>
             <Button
-              title="Verify Code"
+              title="Thibitisha Nambari"
               onPress={handleVerify}
               loading={loading && !verified}
               variant="outline"
@@ -130,7 +137,7 @@ export default function FriendCode() {
             />
             {verified && (
               <Button
-                title="Apply Code"
+                title="Tumia Nambari"
                 onPress={handleApply}
                 loading={loading && verified}
                 style={styles.applyBtn}
@@ -141,14 +148,14 @@ export default function FriendCode() {
 
         <Card style={styles.infoCard}>
           <View style={styles.infoRow}>
-            <Ionicons name="information-circle-outline" size={24} color={colors.primary} />
+            <Ionicons name="information-circle" size={28} color={colors.primary} />
             <View style={styles.infoText}>
-              <Text style={styles.infoTitle}>How it works</Text>
+              <Text style={styles.infoTitle}>Jinsi Inavyofanya Kazi</Text>
               <Text style={styles.infoDescription}>
-                • Enter your friend's referral code{'\n'}
-                • Verify the code is valid{'\n'}
-                • Apply it to receive bonus points{'\n'}
-                • Your friend also gets bonus points!
+                • Ingiza nambari ya rafiki yako{'\n'}
+                • Thibitisha nambari ni halali{'\n'}
+                • Tumia ili upate alama za ziada{'\n'}
+                • Rafiki yako pia atapata alama za ziada!
               </Text>
             </View>
           </View>
@@ -169,16 +176,26 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
+    ...shadows.sm,
   },
   backBtn: {
     padding: spacing.xs,
     marginLeft: -spacing.xs,
   },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flex: 1,
+    justifyContent: 'center',
+  },
   title: {
     ...typography.heading,
     color: colors.textPrimary,
-    flex: 1,
-    textAlign: 'center',
+    fontWeight: '700',
+  },
+  placeholder: {
+    width: 40,
   },
   centered: {
     flex: 1,
@@ -197,12 +214,20 @@ const styles = StyleSheet.create({
   card: {
     padding: spacing.lg,
     marginBottom: spacing.lg,
+    borderRadius: radius.lg,
+    ...shadows.md,
+  },
+  descriptionContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
   },
   description: {
     ...typography.body,
     color: colors.textSecondary,
-    marginBottom: spacing.lg,
     lineHeight: 22,
+    flex: 1,
   },
   inputContainer: {
     marginBottom: spacing.md,
@@ -214,15 +239,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.success + '20',
-    padding: spacing.sm,
-    borderRadius: radius.sm,
+    padding: spacing.md,
+    borderRadius: radius.md,
     marginBottom: spacing.md,
-    gap: spacing.xs,
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.success + '30',
   },
   successText: {
     ...typography.body,
     color: colors.success,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   actions: {
     gap: spacing.md,
@@ -232,9 +259,15 @@ const styles = StyleSheet.create({
   },
   applyBtn: {
     marginTop: spacing.xs,
+    ...shadows.md,
   },
   infoCard: {
     padding: spacing.lg,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primary + '08',
+    borderWidth: 1,
+    borderColor: colors.primary + '20',
+    ...shadows.sm,
   },
   infoRow: {
     flexDirection: 'row',

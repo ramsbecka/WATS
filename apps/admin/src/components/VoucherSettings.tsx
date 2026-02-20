@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
-export default function VoucherSettings() {
+export default function VoucherSettings({ hideTitle }: { hideTitle?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settingsId, setSettingsId] = useState<string | null>(null);
@@ -89,10 +89,13 @@ export default function VoucherSettings() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold tracking-tight text-slate-900">Voucher Settings</h1>
-      <p className="mt-1 text-sm text-slate-500">Configure automatic voucher generation system</p>
-
-      <div className="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      {!hideTitle && (
+        <>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Voucher Settings</h1>
+          <p className="mt-1 text-sm text-slate-500">Configure automatic voucher generation system</p>
+        </>
+      )}
+      <div className={`rounded-xl border border-slate-200 bg-white p-6 shadow-sm ${hideTitle ? 'mt-4' : 'mt-8'}`}>
         <div className="space-y-6">
           {/* Enable/Disable */}
           <div className="flex items-center justify-between">

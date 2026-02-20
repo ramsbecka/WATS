@@ -3,7 +3,17 @@
  * Receives provider callbacks (e.g. M-Pesa), verifies signature, updates payment + order.
  */
 
-import { getServiceClient } from '../_shared/db.ts';
+// Setup type definitions for built-in Supabase Runtime APIs
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+// Inline getServiceClient to avoid bundling issues with _shared folder
+function getServiceClient() {
+  const url = Deno.env.get('SUPABASE_URL')!;
+  const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  return createClient(url, key);
+}
 
 const cors = {
   'Access-Control-Allow-Origin': '*',

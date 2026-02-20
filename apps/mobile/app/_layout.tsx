@@ -13,50 +13,50 @@ export default function RootLayout() {
 
   useEffect(() => {
     let done = false;
+    let timeoutId: ReturnType<typeof setTimeout>;
     const finish = () => {
       if (done) return;
       done = true;
       setLoading(false);
     };
-    // Timeout: if getSession hangs (e.g. placeholder URL / no network), show login faster on web
-    const timeout = Platform.OS === 'web' ? 1000 : 2500;
-    const t = setTimeout(finish, timeout);
-    
-    // Try to get session with race condition protection
+    // On web: short timeout so login shows quickly; avoid getSession hanging
+    const timeoutMs = Platform.OS === 'web' ? 800 : 2500;
+    timeoutId = setTimeout(finish, timeoutMs);
+
     Promise.race([
       supabase.auth.getSession(),
-      new Promise((resolve) => setTimeout(() => resolve({ data: { session: null } }), timeout - 100))
-    ]).then((result: any) => {
-      const { data: { session } } = result || { data: { session: null } };
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        // Don't await - let it load in background
-        fetchProfile(session.user.id).catch(() => {
-          // Silently handle profile fetch errors
-        });
-      } else {
+      new Promise<{ data: { session: null } }>((resolve) => setTimeout(() => resolve({ data: { session: null } }), timeoutMs - 200))
+    ])
+      .then((result: any) => {
+        const { data: { session } } = result || { data: { session: null } };
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchProfile(session.user.id).catch(() => {});
+        } else {
+          setProfile(null);
+        }
+        finish();
+      })
+      .catch(() => {
+        setUser(null);
         setProfile(null);
-      }
-      finish();
-    }).catch(() => {
-      // On error, assume no session
-      setUser(null);
-      setProfile(null);
-      finish();
-    }).finally(() => clearTimeout(t));
+        finish();
+      })
+      .finally(() => clearTimeout(timeoutId));
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        // Don't await - let it load in background
-        fetchProfile(session.user.id).catch(() => {
-          // Silently handle profile fetch errors
-        });
+        fetchProfile(session.user.id).catch(() => {});
       } else {
         setProfile(null);
       }
     });
-    return () => subscription.unsubscribe();
+
+    return () => {
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (

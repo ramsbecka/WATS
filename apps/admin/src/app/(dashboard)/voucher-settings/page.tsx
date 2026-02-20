@@ -1,5 +1,5 @@
-import VoucherSettings from '@/components/VoucherSettings';
+import { redirect } from 'next/navigation';
 
 export default function VoucherSettingsPage() {
-  return <VoucherSettings />;
+  redirect('/vouchers');
 }

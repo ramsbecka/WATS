@@ -1,5 +1,5 @@
-import Banners from '@/components/Banners';
+import { redirect } from 'next/navigation';
 
 export default function BannersPage() {
-  return <Banners />;
+  redirect('/content');
 }

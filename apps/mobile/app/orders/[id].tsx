@@ -116,7 +116,7 @@ export default function OrderDetail() {
 
   const handleSubmitReturn = async () => {
     if (!order || !returnReason.trim()) {
-      Alert.alert('Required', 'Tafadhali andika sababu ya kurudisha bidhaa.');
+      Alert.alert('Required', 'Please enter the reason for returning the product.');
       return;
     }
     setSubmittingReturn(true);
@@ -322,38 +322,38 @@ export default function OrderDetail() {
         {showReturnForm && (
           <Card style={styles.card}>
             <Text style={styles.sectionTitle}>Request Return</Text>
-            <Text style={styles.label}>Sababu ya kurudisha *</Text>
+            <Text style={styles.label}>Return reason *</Text>
             <View style={styles.input}>
               <Text
                 style={styles.inputText}
                 onPress={() => {
                   Alert.alert(
-                    'Chagua sababu',
+                    'Choose reason',
                     '',
                     [
-                      { text: 'Bidhaa imeharibika', onPress: () => setReturnReason('Bidhaa imeharibika') },
-                      { text: 'Bidhaa si sahihi', onPress: () => setReturnReason('Bidhaa si sahihi') },
-                      { text: 'Bidhaa haifanani na maelezo', onPress: () => setReturnReason('Bidhaa haifanani na maelezo') },
-                      { text: 'Ningependa kubadilisha', onPress: () => setReturnReason('Ningependa kubadilisha') },
-                      { text: 'Ningine', onPress: () => setReturnReason('') },
+                      { text: 'Product damaged', onPress: () => setReturnReason('Product damaged') },
+                      { text: 'Wrong product', onPress: () => setReturnReason('Wrong product') },
+                      { text: 'Does not match description', onPress: () => setReturnReason('Does not match description') },
+                      { text: 'Want to exchange', onPress: () => setReturnReason('Want to exchange') },
+                      { text: 'Other', onPress: () => setReturnReason('') },
                     ]
                   );
                 }}
               >
-                {returnReason || 'Chagua sababu'}
+                {returnReason || 'Choose reason'}
               </Text>
             </View>
-            <Text style={styles.label}>Maelezo (optional)</Text>
+            <Text style={styles.label}>Details (optional)</Text>
             <TextInput
               style={styles.textArea}
               value={returnComment}
               onChangeText={setReturnComment}
-              placeholder="Andika maelezo zaidi..."
+              placeholder="Add more details..."
               multiline
               numberOfLines={4}
               textAlignVertical="top"
             />
-            <Text style={styles.label}>Picha za mzigo uliopokea</Text>
+            <Text style={styles.label}>Photos of received items</Text>
             <Pressable onPress={pickImage} style={styles.imagePickerBtn}>
               <Ionicons name="camera-outline" size={24} color={colors.primary} />
               <Text style={styles.imagePickerText}>Add photos</Text>

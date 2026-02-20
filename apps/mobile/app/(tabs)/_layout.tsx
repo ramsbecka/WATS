@@ -14,7 +14,7 @@ export default function TabsLayout() {
   const isDesktopWeb = useIsDesktopWeb();
   const insets = useSafeAreaInsets();
 
-  // Kwa mobile web na native, tumia tabs chini
+  // For mobile web and native, use bottom tabs
   if (!isDesktopWeb) {
     // Calculate tab bar padding kwa safe area - ku-ensure tabs ziko juu ya system navigation bar
     const tabBarPaddingBottom = Platform.OS === 'web' ? 8 : Math.max(insets.bottom, 8);
@@ -25,18 +25,18 @@ export default function TabsLayout() {
           screenOptions={{
             headerShown: false,
             tabBarActiveTintColor: colors.primary,
-            tabBarInactiveTintColor: colors.textSecondary,
+            tabBarInactiveTintColor: colors.textMuted,
             tabBarStyle: { 
               backgroundColor: colors.surface, 
-              borderTopColor: colors.border,
+              borderTopColor: colors.borderLight,
               borderTopWidth: 1,
               paddingBottom: tabBarPaddingBottom,
-              paddingTop: 8,
-              elevation: 8,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: -2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
+              paddingTop: 12,
+              height: 60 + tabBarPaddingBottom,
+              elevation: 12,
+              ...(Platform.OS === 'web'
+                ? { boxShadow: '0px -4px 8px rgba(0, 0, 0, 0.08)' }
+                : { shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 8 }),
               ...(Platform.OS === 'web' ? { 
                 position: 'fixed' as any,
                 bottom: 0,
@@ -46,7 +46,14 @@ export default function TabsLayout() {
                 zIndex: 1000,
               } : {}),
             },
-            tabBarLabelStyle: { fontSize: 12, fontWeight: '500' },
+            tabBarLabelStyle: { 
+              fontSize: 11, 
+              fontWeight: '600',
+              marginTop: -4,
+            },
+            tabBarIconStyle: {
+              marginTop: 4,
+            },
             sceneStyle: { 
               flex: 1, 
               backgroundColor: colors.background,
@@ -59,24 +66,87 @@ export default function TabsLayout() {
             },
           }}
         >
-          <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} /> }} />
-          <Tabs.Screen name="products" options={{ title: 'Products', tabBarIcon: ({ color, size }) => <Ionicons name="grid" size={size} color={color} /> }} />
+          <Tabs.Screen 
+            name="index" 
+            options={{ 
+              title: 'Home', 
+              tabBarIcon: ({ color, size, focused }) => (
+                <Ionicons 
+                  name={focused ? 'home' : 'home-outline'} 
+                  size={focused ? size + 2 : size} 
+                  color={color} 
+                />
+              ),
+            }} 
+          />
+          <Tabs.Screen 
+            name="products" 
+            options={{ 
+              title: 'Products', 
+              tabBarIcon: ({ color, size, focused }) => (
+                <Ionicons 
+                  name={focused ? 'grid' : 'grid-outline'} 
+                  size={focused ? size + 2 : size} 
+                  color={color} 
+                />
+              ),
+            }} 
+          />
           <Tabs.Screen
             name="cart"
             options={{
               title: 'Cart',
-              tabBarIcon: ({ color, size }) => <Ionicons name="cart" size={size} color={color} />,
+              tabBarIcon: ({ color, size, focused }) => (
+                <Ionicons 
+                  name={focused ? 'cart' : 'cart-outline'} 
+                  size={focused ? size + 2 : size} 
+                  color={color} 
+                />
+              ),
               tabBarBadge: cartCount > 0 ? cartCount : undefined,
+              tabBarBadgeStyle: {
+                backgroundColor: colors.error,
+                color: colors.onPrimary,
+                fontSize: 10,
+                fontWeight: '700',
+                minWidth: 18,
+                height: 18,
+                borderRadius: 9,
+              },
             }}
           />
-          <Tabs.Screen name="orders" options={{ title: 'Orders', tabBarIcon: ({ color, size }) => <Ionicons name="list" size={size} color={color} /> }} />
-          <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} /> }} />
+          <Tabs.Screen 
+            name="orders" 
+            options={{ 
+              title: 'Orders', 
+              tabBarIcon: ({ color, size, focused }) => (
+                <Ionicons 
+                  name={focused ? 'receipt' : 'receipt-outline'} 
+                  size={focused ? size + 2 : size} 
+                  color={color} 
+                />
+              ),
+            }} 
+          />
+          <Tabs.Screen 
+            name="profile" 
+            options={{ 
+              title: 'Profile', 
+              tabBarIcon: ({ color, size, focused }) => (
+                <Ionicons 
+                  name={focused ? 'person' : 'person-outline'} 
+                  size={focused ? size + 2 : size} 
+                  color={color} 
+                />
+              ),
+            }} 
+          />
         </Tabs>
       </View>
     );
   }
 
-  // Kwa desktop web, tumia layout ya kawaida na sidebar
+  // For desktop web, use standard layout with sidebar
   return (
     <View style={styles.webContainer}>
       <WebSidebar />

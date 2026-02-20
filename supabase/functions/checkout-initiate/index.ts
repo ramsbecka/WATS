@@ -4,9 +4,141 @@
  * Idempotency via idempotency_key.
  */
 
-import { getServiceClient } from '../_shared/db.ts';
-import { validateShippingAddress, normalizePhone } from '../_shared/checkout_validation.ts';
-import { getMpesaAccessToken, mpesaStkPush } from '../_shared/providers/mpesa.ts';
+// Setup type definitions for built-in Supabase Runtime APIs
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+// Inline getServiceClient to avoid bundling issues with _shared folder
+function getServiceClient() {
+  const url = Deno.env.get('SUPABASE_URL')!;
+  const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  return createClient(url, key);
+}
+
+// Inline validation helpers
+interface ShippingAddress {
+  name?: string;
+  phone?: string;
+  region?: string;
+  district?: string;
+  ward?: string;
+  street?: string;
+}
+
+function validateShippingAddress(addr: ShippingAddress | null | undefined): { valid: boolean; error?: string } {
+  if (!addr || typeof addr !== 'object') {
+    return { valid: false, error: 'Invalid shipping_address' };
+  }
+  const phone = addr.phone?.trim();
+  const region = addr.region?.trim();
+  const street = addr.street?.trim();
+  if (!phone) return { valid: false, error: 'Phone required' };
+  if (!region) return { valid: false, error: 'Region required' };
+  if (!street) return { valid: false, error: 'Street required' };
+  return { valid: true };
+}
+
+function normalizePhone(phone: string): string {
+  // Remove all non-digit characters
+  let cleaned = phone.replace(/\D/g, '');
+  // Remove leading 0 if present (Tanzania phone numbers start with 0)
+  if (cleaned.startsWith('0')) {
+    cleaned = cleaned.substring(1);
+  }
+  return cleaned;
+}
+
+// Inline M-Pesa types and functions
+type MpesaConfig = {
+  consumerKey: string;
+  consumerSecret: string;
+  shortcode: string;
+  passkey: string;
+  env: 'sandbox' | 'production';
+};
+
+type StkPushRequest = {
+  phone: string;      // 255712345678
+  amount: number;     // TZS
+  reference: string;  // order_id or idempotency_key
+  description: string;
+};
+
+type StkPushResponse = {
+  success: boolean;
+  checkoutRequestID?: string;
+  merchantRequestID?: string;
+  errorCode?: string;
+  errorMessage?: string;
+};
+
+// M-Pesa API URLs
+const SANDBOX_URL = 'https://sandbox.safaricom.co.ke';
+const PROD_URL = 'https://api.safaricom.co.ke';
+
+async function getMpesaAccessToken(config: MpesaConfig): Promise<string> {
+  const base = config.env === 'sandbox' ? SANDBOX_URL : PROD_URL;
+  // Use Deno-compatible base64 encoding instead of Buffer
+  const credentials = `${config.consumerKey}:${config.consumerSecret}`;
+  const auth = btoa(credentials);
+  const res = await fetch(`${base}/oauth/v1/generate?grant_type=client_credentials`, {
+    method: 'GET',
+    headers: { Authorization: `Basic ${auth}` },
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`M-Pesa auth failed: ${res.status} ${text}`);
+  }
+  const json = await res.json();
+  return json.access_token;
+}
+
+async function mpesaStkPush(
+  config: MpesaConfig,
+  token: string,
+  req: StkPushRequest
+): Promise<StkPushResponse> {
+  const base = config.env === 'sandbox' ? SANDBOX_URL : PROD_URL;
+  const phone = req.phone.replace(/\D/g, '');
+  const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, 14);
+  // Use Deno-compatible base64 encoding instead of Buffer
+  const passwordString = `${config.shortcode}${config.passkey}${timestamp}`;
+  const password = btoa(passwordString);
+
+  const body = {
+    BusinessShortCode: config.shortcode,
+    Password: password,
+    Timestamp: timestamp,
+    TransactionType: 'CustomerPayBillOnline',
+    Amount: Math.round(req.amount),
+    PartyA: phone,
+    PartyB: config.shortcode,
+    PhoneNumber: phone,
+    CallBackURL: Deno.env.get('MPESA_CALLBACK_URL') || '',
+    AccountReference: req.reference.slice(0, 12),
+    TransactionDesc: req.description.slice(0, 20),
+  };
+
+  const res = await fetch(`${base}/mpesa/stkpush/v1/processrequest`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await res.json();
+  const success = res.ok && data.ResponseCode === '0';
+  return {
+    success,
+    checkoutRequestID: data.CheckoutRequestID,
+    merchantRequestID: data.MerchantRequestID,
+    errorCode: data.errorCode || data.ResponseCode,
+    errorMessage: data.errorMessage || data.ResponseDescription,
+  };
+}
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -50,15 +182,17 @@ Deno.serve(async (req) => {
       );
     }
 
-    const idempotencyKey = req.headers.get('x-idempotency-key') || (await req.json().then((b: CheckoutBody) => b.idempotency_key));
+    // Read request body once
+    const body: CheckoutBody = await req.json();
+    
+    // Get idempotency key from header or body
+    const idempotencyKey = req.headers.get('x-idempotency-key') || body.idempotency_key;
     if (!idempotencyKey) {
       return new Response(
         JSON.stringify({ error: 'idempotency_key required', code: 'MISSING_IDEMPOTENCY' }),
         { status: 400, headers: { ...cors, 'Content-Type': 'application/json' } }
       );
     }
-
-    const body: CheckoutBody = await req.json();
     const { shipping_address, payment_provider = 'mpesa', voucher_code } = body;
     const validation = validateShippingAddress(shipping_address);
     if (!validation.valid) {

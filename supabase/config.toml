@@ -32,6 +32,8 @@ additional_redirect_urls = ["https://admin.wats.co.tz"]
 jwt_expiry = 3600
 enable_signup = true
 enable_phone_signup = true
+# Disable email confirmation - users can login immediately after registration
+enable_confirmations = false
 
 [auth.sms]
 enabled = true

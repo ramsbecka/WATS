@@ -19,7 +19,7 @@ type Banner = {
   file?: File;
 };
 
-export default function Banners() {
+export default function Banners({ hideTitle }: { hideTitle?: boolean } = {}) {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -179,11 +179,13 @@ export default function Banners() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Banners</h1>
-          <p className="mt-1 text-sm text-slate-500">Manage promotional banners for home page</p>
-        </div>
+      <div className={`flex flex-wrap items-center justify-between gap-4 ${hideTitle ? 'mt-0' : ''}`}>
+        {!hideTitle && (
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Banners</h1>
+            <p className="mt-1 text-sm text-slate-500">Manage promotional banners for home page</p>
+          </div>
+        )}
         <button
           onClick={() => setShowAddForm(true)}
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark"

@@ -122,26 +122,35 @@ export async function chatWithAI(
 ): Promise<string> {
   // Check if OpenAI is configured
   const openaiApiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+  const adminApiUrl = process.env.EXPO_PUBLIC_ADMIN_API_URL; // Optional: admin API URL for AI chat
   
-  if (!openaiApiKey) {
-    // Fallback to simple rule-based responses
+  // If no OpenAI key and no admin API URL, use fallback
+  if (!openaiApiKey && !adminApiUrl) {
     return getSimpleResponse(messages[messages.length - 1]?.content || '');
   }
   
   try {
-    // Use OpenAI API via backend (Next.js API route)
-    const response = await fetch('/api/ai/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages, context }),
-    });
+    // Try admin API first if configured (for web builds that can access admin)
+    // Otherwise fallback to simple responses
+    const apiUrl = adminApiUrl 
+      ? `${adminApiUrl}/api/ai/chat`
+      : null;
     
-    if (!response.ok) {
-      throw new Error('Chat API failed');
+    if (apiUrl) {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages, context }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.response || 'I apologize, I could not process your request.';
+      }
     }
     
-    const data = await response.json();
-    return data.response || 'I apologize, I could not process your request.';
+    // Fallback to simple responses if API not available
+    return getSimpleResponse(messages[messages.length - 1]?.content || '');
   } catch (error) {
     console.error('Chat error:', error);
     return getSimpleResponse(messages[messages.length - 1]?.content || '');
@@ -183,19 +192,22 @@ export async function recognizeImage(imageUri: string): Promise<ImageRecognition
     console.warn('ML Kit not available, trying cloud API:', error);
   }
   
-  // Fallback to cloud API via backend
-  try {
-    const response = await fetch('/api/ai/vision', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageUri }),
-    });
-    
-    if (response.ok) {
-      return await response.json();
+  // Fallback to cloud API via backend (if admin API URL is configured)
+  const adminApiUrl = process.env.EXPO_PUBLIC_ADMIN_API_URL;
+  if (adminApiUrl) {
+    try {
+      const response = await fetch(`${adminApiUrl}/api/ai/vision`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUri }),
+      });
+      
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.error('Vision API error:', error);
     }
-  } catch (error) {
-    console.error('Vision API error:', error);
   }
   
   // Return empty result if all fail

@@ -25,18 +25,18 @@ function NoSupabaseScreen() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <div className="max-w-md rounded-xl border border-amber-200 bg-amber-50 p-6 text-center">
-        <p className="font-medium text-amber-900">Supabase haijaunganishwa</p>
+        <p className="font-medium text-amber-900">Supabase is not connected</p>
         <p className="mt-2 text-sm text-amber-800">
-          Weka <code className="rounded bg-amber-100 px-1">NEXT_PUBLIC_SUPABASE_URL</code> na{' '}
-          <code className="rounded bg-amber-100 px-1">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> kwenye{' '}
-          <code className="rounded bg-amber-100 px-1">.env.local</code> kisha uanze upya dev server.
+          Set <code className="rounded bg-amber-100 px-1">NEXT_PUBLIC_SUPABASE_URL</code> and{' '}
+          <code className="rounded bg-amber-100 px-1">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in{' '}
+          <code className="rounded bg-amber-100 px-1">.env.local</code> then restart the dev server.
         </p>
         <button
           type="button"
           onClick={() => router.replace('/login')}
           className="mt-4 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
         >
-          Rudi kwenye Login
+          Back to Login
         </button>
       </div>
     </div>

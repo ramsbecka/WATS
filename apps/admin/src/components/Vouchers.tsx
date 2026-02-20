@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 
 const STATUS_FILTERS = ['all', 'available', 'used', 'expired'] as const;
 
-export default function Vouchers() {
+export default function Vouchers({ hideTitle }: { hideTitle?: boolean }) {
   const [vouchers, setVouchers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -61,13 +61,15 @@ export default function Vouchers() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Vouchers</h1>
-          <p className="mt-1 text-sm text-slate-500">All vouchers in the system</p>
+      {!hideTitle && (
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Vouchers</h1>
+            <p className="mt-1 text-sm text-slate-500">All vouchers in the system</p>
+          </div>
         </div>
-      </div>
-      <div className="mt-4 flex flex-wrap gap-3">
+      )}
+      <div className={`flex flex-wrap gap-3 ${hideTitle ? 'mt-0' : 'mt-4'}`}>
         <input
           type="search"
           placeholder="Search by code or user name..."

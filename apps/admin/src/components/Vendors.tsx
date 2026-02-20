@@ -28,21 +28,21 @@ export default function Vendors() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Maduka</h1>
-          <p className="mt-1 text-sm text-slate-500">Orodha ya maduka; admin anajaza bidhaa mwenyewe baada ya kufuata wenye duka.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Stores</h1>
+          <p className="mt-1 text-sm text-slate-500">Store list; admin adds products after following the store owner.</p>
         </div>
         <Link
           href="/vendors/new"
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark"
         >
-          <Plus className="h-4 w-4" /> Ongeza duka
+          <Plus className="h-4 w-4" /> Add store
         </Link>
       </div>
       <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center gap-2 p-12 text-slate-500">
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            Inapakia…
+            Loading…
           </div>
         ) : (
           <table className="table-row-hover min-w-full divide-y divide-slate-200">
@@ -75,7 +75,7 @@ export default function Vendors() {
                   </td>
                   <td className="px-5 py-3.5 text-right">
                     <Link href={`/vendors/${v.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-dark">
-                      <Pencil className="h-4 w-4" /> Hariri
+                      <Pencil className="h-4 w-4" /> Edit
                     </Link>
                   </td>
                 </tr>
@@ -85,7 +85,7 @@ export default function Vendors() {
         )}
         {!loading && vendors.length === 0 && (
           <div className="p-12 text-center text-slate-500">
-            Hakuna maduka bado. <Link href="/vendors/new" className="text-primary hover:underline">Ongeza duka</Link>.
+            No stores yet. <Link href="/vendors/new" className="text-primary hover:underline">Add store</Link>.
           </div>
         )}
       </div>

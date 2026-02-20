@@ -32,7 +32,9 @@ const PROD_URL = 'https://api.safaricom.co.ke';
 
 export async function getMpesaAccessToken(config: MpesaConfig): Promise<string> {
   const base = config.env === 'sandbox' ? SANDBOX_URL : PROD_URL;
-  const auth = Buffer.from(`${config.consumerKey}:${config.consumerSecret}`).toString('base64');
+  // Use Deno-compatible base64 encoding instead of Buffer
+  const credentials = `${config.consumerKey}:${config.consumerSecret}`;
+  const auth = btoa(credentials);
   const res = await fetch(`${base}/oauth/v1/generate?grant_type=client_credentials`, {
     method: 'GET',
     headers: { Authorization: `Basic ${auth}` },
@@ -53,7 +55,9 @@ export async function mpesaStkPush(
   const base = config.env === 'sandbox' ? SANDBOX_URL : PROD_URL;
   const phone = req.phone.replace(/\D/g, '');
   const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, 14);
-  const password = Buffer.from(`${config.shortcode}${config.passkey}${timestamp}`).toString('base64');
+  // Use Deno-compatible base64 encoding instead of Buffer
+  const passwordString = `${config.shortcode}${config.passkey}${timestamp}`;
+  const password = btoa(passwordString);
 
   const body = {
     BusinessShortCode: config.shortcode,

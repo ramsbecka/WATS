@@ -76,7 +76,7 @@ export default function Products() {
   }, [selectedCategoryId, selectedSubCategoryId, search]);
 
   const handleDelete = async (productId: string, productName: string) => {
-    if (!confirm(`Je, una uhakika unataka kufuta bidhaa "${productName}"?\n\nHii itaondoa bidhaa kabisa na hauwezi kuirejesha.`)) {
+    if (!confirm(`Are you sure you want to delete product "${productName}"?\n\nThis will remove the product permanently and cannot be undone.`)) {
       return;
     }
     
@@ -85,7 +85,7 @@ export default function Products() {
       // Delete product (cascade will delete variants, images, etc.)
       const { error } = await supabase.from('products').delete().eq('id', productId);
       if (error) throw error;
-      alert('Bidhaa imefutwa.');
+      alert('Product deleted.');
       loadProducts();
     } catch (e: any) {
       alert(`Failed to delete product: ${e.message}`);
@@ -96,32 +96,32 @@ export default function Products() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Products</h1>
           <p className="mt-1 text-sm text-slate-500">Catalog and pricing</p>
         </div>
         <Link
           href="/products/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark"
+          className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-dark hover:shadow-md"
         >
           <Plus className="h-4 w-4" /> Add product
         </Link>
-      </div>
-      <div className="mt-4 flex flex-wrap gap-3">
+      </header>
+      <div className="mb-4 flex flex-wrap gap-3">
         <input
           type="search"
           placeholder="Search by name or SKU..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm w-64"
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-card focus:border-primary/40 w-64"
           aria-label="Search products"
         />
         <select
           aria-label="Filter by category"
           value={selectedCategoryId}
           onChange={(e) => setSelectedCategoryId(e.target.value)}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-card focus:border-primary/40"
         >
           <option value="">All categories</option>
           {mainCategories.map((c) => (
@@ -133,7 +133,7 @@ export default function Products() {
             aria-label="Filter by sub-category (kundi)"
             value={selectedSubCategoryId}
             onChange={(e) => setSelectedSubCategoryId(e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-card focus:border-primary/40"
             disabled={subCategories.length === 0}
           >
             <option value="">{subCategories.length > 0 ? 'All sub-categories' : 'No sub-categories'}</option>
@@ -143,16 +143,16 @@ export default function Products() {
           </select>
         )}
       </div>
-      <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-panel border border-slate-200/90 bg-white shadow-card">
         {loading ? (
-          <div className="flex items-center justify-center gap-2 p-12 text-slate-500">
-            <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            Loading...
+          <div className="flex flex-col items-center justify-center gap-3 py-16 text-slate-500">
+            <span className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <span className="text-sm font-medium">Loading products…</span>
           </div>
         ) : (
-          <table className="table-row-hover min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-50">
-              <tr>
+          <table className="table-row-hover min-w-full divide-y divide-slate-100">
+            <thead>
+              <tr className="bg-slate-50/80">
                 <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Name</th>
                 <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">SKU</th>
                 <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Price (TZS)</th>
@@ -160,7 +160,7 @@ export default function Products() {
                 <th className="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
+            <tbody className="divide-y divide-slate-100 bg-white">
               {products.map((p) => (
                 <tr key={p.id}>
                   <td className="px-5 py-3.5 text-sm font-medium text-slate-900">{p.name_en ?? p.id}</td>
@@ -201,7 +201,10 @@ export default function Products() {
           </table>
         )}
         {!loading && products.length === 0 && (
-          <div className="p-12 text-center text-slate-500">No products yet.</div>
+          <div className="flex flex-col items-center justify-center gap-2 py-16 text-slate-500">
+            <p className="text-sm font-medium">No products yet</p>
+            <p className="text-xs">Add your first product to get started.</p>
+          </div>
         )}
       </div>
     </div>
