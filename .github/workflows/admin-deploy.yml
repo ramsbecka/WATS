@@ -1,4 +1,3 @@
-# Repo secrets (VERCEL_*, NETLIFY_*) are valid; add them in Settings → Secrets. Linter warnings for them are safe to ignore.
 name: Deploy Admin Dashboard
 
 on:
@@ -61,47 +60,19 @@ jobs:
             echo "has_vercel=false" >> $GITHUB_OUTPUT
           fi
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Check Netlify secrets
-        id: check-netlify
-        run: |
-          if [ -n "$NETLIFY_AUTH_TOKEN" ] && [ -n "$NETLIFY_SITE_ID" ]; then
-            echo "has_netlify=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_netlify=false" >> $GITHUB_OUTPUT
-          fi
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}      # actionlint:ignore=expression
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}    # actionlint:ignore=expression
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}  # actionlint:ignore=expression
 
       - name: Deploy to Vercel
         if: steps.check-vercel.outputs.has_vercel == 'true'
         uses: amondnet/vercel-action@v25
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}      # actionlint:ignore=expression
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}   # actionlint:ignore=expression
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}  # actionlint:ignore=expression
           vercel-args: '--prod'
           working-directory: apps/admin
-
-      - name: Deploy to Netlify (alternative)
-        if: steps.check-netlify.outputs.has_netlify == 'true'
-        uses: nwtgck/actions-netlify@v3.0
-        with:
-          publish-dir: './apps/admin/.next'
-          production-branch: main
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: "Deploy from GitHub Actions"
-          enable-pull-request-comment: false
-          enable-commit-comment: true
-          overwrites-pull-request-comment: true
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-        continue-on-error: true
 
       # GitHub Pages fallback: inafanya kazi tu ikiwa build ilitengeneza apps/admin/out
       # (Next.js ina output: 'standalone' by default, hivyo out/ haipo – skip GH Pages unless you use output: 'export')
@@ -115,7 +86,7 @@ jobs:
           fi
 
       - name: Deploy to GitHub Pages (fallback)
-        if: steps.check-vercel.outputs.has_vercel == 'false' && steps.check-netlify.outputs.has_netlify == 'false' && steps.check-out.outputs.has_out == 'true'
+        if: steps.check-vercel.outputs.has_vercel == 'false' && steps.check-out.outputs.has_out == 'true'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
