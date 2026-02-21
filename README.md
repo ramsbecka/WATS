@@ -140,6 +140,9 @@ npm run dev
 - **Build:** Vercel auto-detects Next.js when root is `apps/admin`; no custom build command needed.
 - **Env vars:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
+### Mobile (APK via EAS)
+- Push to `main` (changes under `apps/mobile/**`) or run workflow **"Mobile EAS Build"** in GitHub Actions. Build runs on EAS (Expo cloud). Set GitHub Secret **`EXPO_TOKEN`** (create at [expo.dev/settings/access-tokens](https://expo.dev/settings/access-tokens)). Profile **preview** → APK; **production** → AAB.
+
 ### CI (GitHub Actions)
 - `.github/workflows/ci.yml` runs on push/PR to `main` or `develop`: builds admin (Next.js), runs Edge Functions unit tests (Deno).
 - **Run Edge Function tests locally:**  

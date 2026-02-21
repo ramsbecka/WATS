@@ -96,16 +96,24 @@ jobs:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         continue-on-error: true
 
-      # GitHub Pages fallback: inafanya kazi tu ikiwa next.config.mjs ina output: 'export'
-      # (standalone build haitengenezi out/; badilisha config kisha jenga tena)
+      # GitHub Pages fallback: inafanya kazi tu ikiwa build ilitengeneza apps/admin/out
+      # (Next.js ina output: 'standalone' by default, hivyo out/ haipo – skip GH Pages unless you use output: 'export')
+      - name: Check for static export (out)
+        id: check-out
+        run: |
+          if [ -d apps/admin/out ]; then
+            echo "has_out=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_out=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Deploy to GitHub Pages (fallback)
-        if: steps.check-vercel.outputs.has_vercel == 'false' && steps.check-netlify.outputs.has_netlify == 'false'
+        if: steps.check-vercel.outputs.has_vercel == 'false' && steps.check-netlify.outputs.has_netlify == 'false' && steps.check-out.outputs.has_out == 'true'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./apps/admin/out
           cname: admin.wats.tz
-        continue-on-error: true
 
       - name: Create deployment status
         uses: actions/github-script@v7
