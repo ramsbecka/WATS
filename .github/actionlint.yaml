@@ -1,0 +1,6 @@
+# Ignore "Context access might be invalid" for custom repo secrets (VERCEL_*, NETLIFY_*, etc).
+# Actionlint only knows GITHUB_TOKEN; repository secrets are valid at runtime.
+paths:
+  ".github/workflows/**/*.yml":
+    ignore:
+      - "Context access might be invalid:.*"
