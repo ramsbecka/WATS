@@ -95,7 +95,7 @@ This is the **discussion document** for the system: approach, components and dat
 - **Tests:** Unit for payment flows; integration for order → payment → fulfillment.  
 - **Errors:** Error tracking (e.g. Sentry).  
 - **Metrics:** Payment success rate, orders/day, fulfillment time; alerts for anomalies.  
-- **CI/CD:** GitHub Actions; Supabase migrations + Edge deploy; Admin → Vercel/Netlify; Mobile → Expo EAS.  
+- **CI/CD:** GitHub Actions; Supabase migrations + Edge deploy; Admin → Vercel/Netlify.  
 - **Env vars:** Documented in Deployment guide and .env.example.
 
 ---

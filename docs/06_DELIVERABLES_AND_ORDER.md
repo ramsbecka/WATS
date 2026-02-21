@@ -40,7 +40,7 @@ Hii inaeleza **matoleo** yanayotarajiwa na **mpangilio sahihi**: documentation k
 | **E** | Admin dashboard | React + Vite + Tailwind + Shadcn: Dashboard, Products CRUD, Categories, Inventory, Orders, Shipments, Vendors, Payments, Payouts & reports. |
 | **F** | API spec (final) | REST endpoints + payloads + auth + pagination + role checks (can be 04_API_CONTRACT.md updated with any changes from implementation). |
 | **G** | Tests | Unit (payment flows); integration (order → payment → fulfillment); error tracking (e.g. Sentry). |
-| **H** | Deployment | GitHub Actions; Supabase migrations + Edge deploy; Admin → Vercel/Netlify; Mobile → Expo EAS; env vars documentation + .env.example. |
+| **H** | Deployment | GitHub Actions; Supabase migrations + Edge deploy; Admin → Vercel/Netlify; env vars documentation + .env.example. |
 | **I** | README | Local setup, env vars, how to run migrations, apps, and deploy. |
 
 ---

@@ -136,18 +136,12 @@ npm run dev
   Full payment flow: **[docs/PAYMENT_FLOW.md](docs/PAYMENT_FLOW.md)**.
 
 ### Admin (Vercel / Netlify)
-- **Root Directory:** Set to **`apps/admin`** in Vercel (Settings → General). Otherwise you get 404 NOT_FOUND. See [docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md).
+- **Root Directory:** Set to **`apps/admin`** in Vercel (Settings → General). Otherwise you get 404 NOT_FOUND. See [docs/BUILD_AND_DEPLOY.md](docs/BUILD_AND_DEPLOY.md).
 - **Build:** Vercel auto-detects Next.js when root is `apps/admin`; no custom build command needed.
 - **Env vars:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-### Mobile (Expo EAS)
-- Install EAS CLI: `npm i -g eas-cli`; login: `eas login`.
-- In `apps/mobile`: `eas build --platform all` (or `android` / `ios`).
-- Set env in EAS: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
-- Submit: `eas submit` (after build).
-
 ### CI (GitHub Actions)
-- `.github/workflows/ci.yml` runs on push/PR to `main` or `develop`: builds admin (Next.js), installs mobile and runs TypeScript check, runs Edge Functions unit tests (Deno).
+- `.github/workflows/ci.yml` runs on push/PR to `main` or `develop`: builds admin (Next.js), runs Edge Functions unit tests (Deno).
 - **Run Edge Function tests locally:**  
   `deno test --allow-read supabase/functions/_shared/checkout_validation.test.ts`  
   `deno test --allow-read supabase/functions/payment-webhook/parse_webhook.test.ts`
